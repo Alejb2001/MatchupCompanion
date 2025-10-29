@@ -1,4 +1,4 @@
-# MatchupCompanion
+# Matchup Companion
 Un proyecto web full-stack construido con **.NET 8 (o 7)** que permite a los jugadores de League of Legends consultar, crear y compartir estrategias para enfrentamientos (matchups) específicos.
 
 Este proyecto fue creado para demostrar habilidades en el ecosistema .NET, incluyendo **ASP.NET Core Web API**, **Blazor WebAssembly** y **Entity Framework Core**.
@@ -56,4 +56,4 @@ Este proyecto tiene una base sólida y puede expandirse con nuevas característi
 
 ---
 
-*Proyecto creado por `Alejandro Burciaga Calzadillas` *
+* Proyecto creado por `Alejandro Burciaga Calzadillas` *
