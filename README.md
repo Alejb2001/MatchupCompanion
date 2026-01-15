@@ -56,4 +56,4 @@ Este proyecto tiene una base sólida y puede expandirse con nuevas característi
 
 ---
 
-* Proyecto creado por `Alejandro Burciaga Calzadillas` *
+* Proyecto creado por Alejandro Burciaga Calzadillas *
