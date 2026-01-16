@@ -1,7 +1,10 @@
 # Matchup Companion
-Un proyecto web full-stack construido con **.NET 8 (o 7)** que permite a los jugadores de League of Legends consultar, crear y compartir estrategias para enfrentamientos (matchups) específicos.
+
+Un proyecto web full-stack construido con **.NET 8** que permite a los jugadores de League of Legends consultar, crear y compartir estrategias para enfrentamientos (matchups) específicos.
 
 Este proyecto fue creado para demostrar habilidades en el ecosistema .NET, incluyendo **ASP.NET Core Web API**, **Blazor WebAssembly** y **Entity Framework Core**.
+
+> **Estado Actual**: Backend funcional con sincronización de campeones desde Data Dragon de Riot Games. Base de datos SQL Server LocalDB configurada con 172 campeones sincronizados.
 
 ---
 
@@ -21,10 +24,12 @@ Todo esto se gestiona a través de una interfaz de usuario reactiva construida c
 
 Este proyecto utiliza una arquitectura de Aplicación Blazor WebAssembly Hospedada en ASP.NET Core, lo que permite un desarrollo full-stack cohesivo.
 
-### Backend (`.Server`)
-* **ASP.NET Core Web API (.NET 8 / 7)**: Para construir los endpoints RESTful que gestionan los datos.
-* **Entity Framework Core 8 / 7**: Para el ORM (mapeo objeto-relacional) y la comunicación con la base de datos.
-* **SQL Server** (o `[Tu Base de Datos, ej: PostgreSQL, SQLite]`): Como motor de la base de datos.
+### Backend (`.API`)
+* **ASP.NET Core Web API (.NET 8)**: Para construir los endpoints RESTful que gestionan los datos.
+* **Entity Framework Core 8**: Para el ORM (mapeo objeto-relacional) y la comunicación con la base de datos.
+* **SQL Server LocalDB**: Como motor de la base de datos (desarrollo).
+* **Swagger/OpenAPI**: Documentación interactiva de la API.
+* **Integración con Data Dragon**: Sincronización automática de campeones desde la API de Riot Games.
 
 ### Frontend (`.Client`)
 * **Blazor WebAssembly**: Para construir una SPA (Single Page Application) interactiva y de alto rendimiento que se ejecuta en el navegador.
@@ -36,24 +41,100 @@ Este proyecto utiliza una arquitectura de Aplicación Blazor WebAssembly Hospeda
 
 ---
 
-## ✨ Características Principales
+## ✨ Características Implementadas
 
-* **API RESTful Completa**: Endpoints para operaciones CRUD (Crear, Leer, Actualizar, Borrar) sobre Campeones y Matchups.
-* **Interfaz Reactiva**: Componentes de Blazor que reaccionan a la selección del usuario sin recargar la página.
-* **Persistencia de Datos**: Uso de Entity Framework Core para almacenar y recuperar matchups de forma eficiente.
-* **Validación de Formularios**: Manejo de la entrada del usuario tanto en el cliente (Blazor) como en el servidor (API).
+### ✅ Backend API
+* **API RESTful Completa**: Endpoints para operaciones CRUD sobre Campeones, Matchups, Tips y Roles.
+* **Sincronización con Riot Games**: 172 campeones sincronizados automáticamente desde Data Dragon.
+* **Documentación Swagger**: Interfaz interactiva para probar todos los endpoints.
+* **Persistencia de Datos**: Entity Framework Core con SQL Server LocalDB.
+* **Arquitectura en Capas**: Repositorios, Servicios y Controladores bien separados.
 
----
-
-## 📈 Posibles Mejoras Futuras
-
-Este proyecto tiene una base sólida y puede expandirse con nuevas características:
-
-* **Autenticación de Usuarios**: Implementar **ASP.NET Core Identity** para que los usuarios se registren y puedan editar/eliminar *sus propios* consejos.
-* **Sistema de Votación**: Permitir a los usuarios votar (upvote/downvote) los consejos más útiles.
-* **Integración con la API de Riot**: Poblar la base de datos de campeones automáticamente usando la [API oficial de Riot Games](https://developer.riotgames.com/).
-* **Estadísticas Avanzadas**: Calcular *win rates* basados en los datos de la API de Riot.
+### 🚧 Frontend (Pendiente)
+* Interfaz de usuario con Blazor WebAssembly.
+* Componentes reactivos para selección de campeones.
+* Visualización de matchups y consejos.
 
 ---
 
-* Proyecto creado por Alejandro Burciaga Calzadillas *
+## 🚀 Inicio Rápido
+
+### Prerrequisitos
+- .NET 8 SDK
+- SQL Server LocalDB (incluido con Visual Studio)
+- Visual Studio 2022 o VS Code
+
+### Configuración
+
+1. **Clonar el repositorio**
+   ```bash
+   git clone <repository-url>
+   cd MatchupCompanion
+   ```
+
+2. **Configurar la API Key de Riot** (Opcional, solo para sincronización)
+   - Copia `appsettings.Development.json.example` a `appsettings.Development.json`
+   - Obtén una API key en: https://developer.riotgames.com/
+   - Reemplaza `YOUR_RIOT_API_KEY_HERE` con tu key
+   - **IMPORTANTE**: Este archivo NO debe subirse a Git
+
+3. **Aplicar migraciones** (si es necesario)
+   ```bash
+   cd MatchupCompanion.API
+   dotnet ef database update
+   ```
+
+4. **Ejecutar la aplicación**
+   ```bash
+   dotnet run
+   ```
+
+5. **Acceder a Swagger**
+   - HTTP: http://localhost:5007
+   - HTTPS: https://localhost:7285
+
+6. **Sincronizar campeones**
+   - En Swagger, ejecuta `POST /api/RiotSync/sync-champions`
+   - Esto descargará los ~172 campeones actuales de League of Legends
+
+---
+
+## 📈 Mejoras Futuras
+
+* **Autenticación de Usuarios**: Implementar ASP.NET Core Identity para que los usuarios se registren y puedan editar/eliminar sus propios consejos.
+* **Sistema de Votación**: Permitir a los usuarios votar los consejos más útiles.
+* **Estadísticas Avanzadas**: Calcular win rates y estadísticas de matchups.
+* **Frontend Blazor**: Completar la interfaz de usuario.
+* **Caching**: Implementar cache para mejorar rendimiento.
+* **Tests Unitarios**: Agregar cobertura de pruebas.
+
+---
+
+## 📂 Estructura del Proyecto
+
+```
+MatchupCompanion/
+├── MatchupCompanion.API/           # Backend ASP.NET Core Web API
+│   ├── Controllers/                # Endpoints de la API
+│   ├── Services/                   # Lógica de negocio
+│   ├── Data/                       # DbContext y Repositorios
+│   │   └── Repositories/
+│   ├── Models/                     # Entidades y DTOs
+│   ├── ExternalServices/           # RiotApiService (Data Dragon)
+│   └── Migrations/                 # Migraciones de EF Core
+├── ARCHITECTURE.md                 # Documentación de arquitectura
+├── GETTING-STARTED.md             # Guía de inicio
+└── PROJECT-STATUS.md              # Estado actual del proyecto
+```
+
+---
+
+## 📚 Documentación Adicional
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Detalles de arquitectura y patrones utilizados
+- [GETTING-STARTED.md](GETTING-STARTED.md) - Guía detallada de configuración
+- [PROJECT-STATUS.md](PROJECT-STATUS.md) - Estado actual y próximos pasos
+
+---
+
+**Proyecto creado por Alejandro Burciaga Calzadillas**
