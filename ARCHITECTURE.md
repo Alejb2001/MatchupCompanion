@@ -47,14 +47,16 @@
                 └──────────────────────┘
 
          ┌────────────────────────────┐
-         │   Riot Games API           │
-         │   (Data Dragon)            │
+         │   Riot Games Data Dragon   │
+         │   (ddragon.leagueoflegends │
+         │   .com)                    │
          └──────────┬─────────────────┘
-                    │ HTTP
+                    │ HTTPS (No API Key)
                     ▼
          ┌──────────────────────────────┐
          │  RiotApiService              │
-         │  (ExternalServices)          │
+         │  - GetLatestVersionAsync()   │
+         │  - SyncChampionsFromRiot()   │
          └──────────────────────────────┘
 ```
 
@@ -407,6 +409,198 @@ builder.Services.AddCors(options =>
 
 **Regla:** Toda operación I/O debe ser async
 
+## Integración con Riot Games Data Dragon
+
+### ¿Qué es Data Dragon?
+
+Data Dragon es un servicio CDN de Riot Games que provee:
+- Información estática de campeones (nombres, títulos, stats)
+- Imágenes de campeones, ítems, habilidades
+- Datos de ítems, runas, y más
+- **No requiere API key** (a diferencia de la Riot API oficial)
+- Actualizado con cada patch de League of Legends
+
+### RiotApiService - Arquitectura
+
+```csharp
+public class RiotApiService
+{
+    private readonly HttpClient _httpClient;
+    private readonly IChampionRepository _championRepository;
+    private readonly ILogger<RiotApiService> _logger;
+
+    // URL base de Data Dragon
+    private const string DataDragonBaseUrl = "https://ddragon.leagueoflegends.com";
+
+    public async Task<string> GetLatestVersionAsync()
+    {
+        // Obtiene la versión más reciente (ej: "14.24.1")
+        // URL: https://ddragon.leagueoflegends.com/api/versions.json
+    }
+
+    public async Task<int> SyncChampionsFromRiotAsync(string language = "en_US")
+    {
+        // Sincroniza campeones desde:
+        // https://ddragon.leagueoflegends.com/cdn/{version}/data/{language}/champion.json
+
+        // 1. Obtiene versión actual
+        // 2. Descarga JSON de campeones
+        // 3. Deserializa con [JsonPropertyName]
+        // 4. Crea/actualiza cada campeón en BD
+        // 5. Retorna cantidad sincronizada
+    }
+}
+```
+
+### Deserialización JSON - Clases Internas
+
+**Problema resuelto**: Data Dragon retorna propiedades en minúsculas (`name`, `title`, `blurb`), pero C# usa PascalCase (`Name`, `Title`, `Blurb`).
+
+**Solución**: Atributos `[JsonPropertyName]`
+
+```csharp
+private class RiotChampion
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("key")]
+    public string Key { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
+
+    [JsonPropertyName("blurb")]
+    public string Blurb { get; set; }
+
+    [JsonPropertyName("image")]
+    public RiotChampionImage Image { get; set; }
+
+    [JsonPropertyName("tags")]
+    public List<string> Tags { get; set; }
+}
+```
+
+### Mapeo de Roles
+
+Data Dragon usa "tags" genéricos (`Fighter`, `Mage`, `Support`), pero nuestra BD usa roles específicos de LoL (`Top`, `Jungle`, `Mid`, `ADC`, `Support`).
+
+**Mapeo implementado**:
+```csharp
+private int? MapRoleToId(string? riotRole)
+{
+    return riotRole?.ToLower() switch
+    {
+        "fighter" => 1,      // Top
+        "tank" => 1,         // Top
+        "assassin" => 3,     // Mid
+        "mage" => 3,         // Mid
+        "marksman" => 4,     // ADC
+        "support" => 5,      // Support
+        _ => null            // Sin rol definido
+    };
+}
+```
+
+**Nota**: Este mapeo es simplificado. En producción se podría:
+- Permitir múltiples roles por campeón
+- Usar machine learning para mapeo más preciso
+- Consultar API oficial de Riot para stats de posición
+
+### Flujo de Sincronización
+
+```
+1. Usuario ejecuta POST /api/RiotSync/sync-champions
+
+2. RiotSyncController.SyncChampions()
+   └─ Llama a RiotApiService.SyncChampionsFromRiotAsync()
+
+3. RiotApiService
+   ├─ GetLatestVersionAsync()
+   │  └─ GET https://ddragon.leagueoflegends.com/api/versions.json
+   │     → ["14.24.1", "14.23.1", ...]
+   │
+   ├─ Construye URL de campeones
+   │  → https://ddragon.leagueoflegends.com/cdn/14.24.1/data/en_US/champion.json
+   │
+   ├─ Deserializa JSON → RiotChampionResponse
+   │  └─ Dictionary<string, RiotChampion> con ~172 campeones
+   │
+   └─ Para cada campeón:
+      ├─ ChampionRepository.GetByRiotIdAsync(champion.Key)
+      ├─ Si NO existe: CreateAsync()
+      │  └─ Campeón creado con imagen URL:
+      │     https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Aatrox.png
+      │
+      └─ Si existe: UpdateAsync()
+         └─ Actualiza nombre, título, descripción, imagen
+
+4. Retorna cantidad de campeones sincronizados (172)
+```
+
+### URLs de Imágenes Generadas
+
+Las imágenes de campeones se generan dinámicamente:
+
+**Formato**:
+```
+https://ddragon.leagueoflegends.com/cdn/{version}/img/champion/{championId}.png
+```
+
+**Ejemplo real**:
+```
+https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Aatrox.png
+https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/Ahri.png
+```
+
+**Ventaja**: Las URLs son estables y se sirven desde CDN de Riot (alta disponibilidad).
+
+### Manejo de Errores
+
+```csharp
+try
+{
+    var version = await GetLatestVersionAsync();
+    // ...
+}
+catch (HttpRequestException ex)
+{
+    _logger.LogError(ex, "Error de red al contactar Data Dragon");
+    throw;
+}
+catch (JsonException ex)
+{
+    _logger.LogError(ex, "Error al deserializar respuesta de Riot");
+    throw;
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "Error general en sincronización");
+    throw;
+}
+```
+
+### Logging de Sincronización
+
+Durante la sincronización se generan logs:
+
+```
+info: RiotApiService[0]
+      Obteniendo campeones desde https://ddragon.leagueoflegends.com/cdn/14.24.1/data/en_US/champion.json
+
+info: RiotApiService[0]
+      Campeón creado: Aatrox
+
+info: RiotApiService[0]
+      Campeón actualizado: Ahri
+
+info: RiotApiService[0]
+      Sincronización completada. 172 campeones sincronizados
+```
+
 ## Testing (Próximos Pasos)
 
 ### Unit Tests
@@ -517,7 +711,52 @@ public async Task<ChampionDto?> GetChampionByIdAsync(int id)
 - API Gateway (Ocelot, YARP)
 - Event-driven con message bus (RabbitMQ, Azure Service Bus)
 
+## Configuración y Seguridad de API Keys
+
+### Gestión de Secrets
+
+**Archivos de configuración**:
+- `appsettings.json` - Configuración base (versionado en Git)
+- `appsettings.Development.json` - Configuración local con secrets (NO versionado)
+- `appsettings.Development.json.example` - Plantilla sin secrets (versionado)
+
+**Estructura de appsettings.Development.json**:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MatchupCompanionDb;..."
+  },
+  "RiotApi": {
+    "ApiKey": "RGAPI-XXXXX-XXXXX-XXXXX",  // <- Secret, no commitear
+    "DataDragonBaseUrl": "https://ddragon.leagueoflegends.com"
+  }
+}
+```
+
+**Protección en .gitignore**:
+```gitignore
+# Archivos con API keys NO se suben a Git
+**/appsettings.*.json
+!**/appsettings.json
+# appsettings.Development.json será ignorado
+```
+
+**⚠️ IMPORTANTE**:
+- NUNCA commitear archivos con API keys reales
+- Usar User Secrets en desarrollo: `dotnet user-secrets set "RiotApi:ApiKey" "RGAPI-..."`
+- En producción: Azure Key Vault, AWS Secrets Manager, o variables de entorno
+
+### Obtener API Key de Riot
+
+1. Registrarse en: https://developer.riotgames.com/
+2. Crear una aplicación
+3. Copiar la API key generada
+4. Agregar a `appsettings.Development.json` (local)
+
+**Nota**: Data Dragon NO requiere API key para sincronización de campeones.
+
 ---
 
-**Documentación generada:** Enero 2026
-**Versión:** 1.0
+**Documentación generada:** 16 Enero 2026
+**Versión:** 1.1
+**Última actualización**: Integración con Data Dragon completada

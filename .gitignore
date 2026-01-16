@@ -158,7 +158,8 @@ MigrationBackup/
 appsettings.Production.json
 **/appsettings.*.json
 !**/appsettings.json
-!**/appsettings.Development.json
+# IMPORTANT: appsettings.Development.json contains API keys and should NOT be committed
+# Create a appsettings.Development.json.example file as template instead
 
 # Database files
 *.db

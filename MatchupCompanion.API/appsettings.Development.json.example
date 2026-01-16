@@ -1,0 +1,17 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MatchupCompanionDb;Trusted_Connection=true;MultipleActiveResultSets=true"
+  },
+  "RiotApi": {
+    "ApiKey": "YOUR_RIOT_API_KEY_HERE",
+    "DataDragonBaseUrl": "https://ddragon.leagueoflegends.com"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Information",
+      "Microsoft": "Information",
+      "Microsoft.EntityFrameworkCore": "Information"
+    }
+  }
+}
