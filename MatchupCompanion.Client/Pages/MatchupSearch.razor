@@ -1,0 +1,213 @@
+@page "/matchup-search"
+@using MatchupCompanion.Shared.Models
+@using MatchupCompanion.Client.Services
+@inject IMatchupService MatchupService
+@inject IChampionService ChampionService
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+
+<PageTitle>Buscar Matchup</PageTitle>
+
+<div class="container mt-4">
+    <h1>Buscar Matchup</h1>
+    <p class="lead">Encuentra información sobre un matchup específico</p>
+
+    <div class="row mt-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Selecciona los campeones y el rol</h5>
+
+                    @if (isLoadingData)
+                    {
+                        <div class="text-center my-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando datos...</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label for="playerChampion" class="form-label">Tu Campeón</label>
+                            <select id="playerChampion" class="form-select" @bind="selectedPlayerChampionId">
+                                <option value="0">-- Selecciona tu campeón --</option>
+                                @foreach (var champion in champions)
+                                {
+                                    <option value="@champion.Id">@champion.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="enemyChampion" class="form-label">Campeón Enemigo</label>
+                            <select id="enemyChampion" class="form-select" @bind="selectedEnemyChampionId">
+                                <option value="0">-- Selecciona el campeón enemigo --</option>
+                                @foreach (var champion in champions)
+                                {
+                                    <option value="@champion.Id">@champion.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Rol</label>
+                            <select id="role" class="form-select" @bind="selectedRoleId">
+                                <option value="0">-- Selecciona el rol --</option>
+                                @foreach (var role in roles)
+                                {
+                                    <option value="@role.Id">@role.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <button class="btn btn-primary w-100" @onclick="SearchMatchup" disabled="@isSearching">
+                            @if (isSearching)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Buscando...</span>
+                            }
+                            else
+                            {
+                                <span>Buscar Matchup</span>
+                            }
+                        </button>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3" role="alert">
+                            @errorMessage
+                        </div>
+                    }
+
+                    @if (searchCompleted && matchup == null)
+                    {
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <strong>No encontrado:</strong> No existe un matchup para esta combinación.
+                            <a href="/create-matchup" class="alert-link">¿Quieres crearlo?</a>
+                        </div>
+                    }
+
+                    @if (matchup != null)
+                    {
+                        <div class="card mt-3 border-success">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">Matchup Encontrado</h5>
+                                <p class="mb-2">
+                                    <strong>@matchup.PlayerChampion.Name</strong> VS <strong>@matchup.EnemyChampion.Name</strong>
+                                </p>
+                                <p class="mb-2">
+                                    <span class="badge bg-secondary">@matchup.Role.Name</span>
+                                    <span class="badge @GetDifficultyBadgeClass(matchup.Difficulty) ms-2">
+                                        @matchup.Difficulty
+                                    </span>
+                                </p>
+                                <button class="btn btn-success" @onclick="() => ViewMatchupDetails()">
+                                    Ver Detalles Completos
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ChampionDto> champions = new();
+    private List<RoleDto> roles = new();
+    private MatchupDto? matchup;
+
+    private int selectedPlayerChampionId = 0;
+    private int selectedEnemyChampionId = 0;
+    private int selectedRoleId = 0;
+
+    private bool isLoadingData = true;
+    private bool isSearching = false;
+    private bool searchCompleted = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoadingData = true;
+        try
+        {
+            champions = await ChampionService.GetAllChampionsAsync();
+            roles = await RoleService.GetAllRolesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar datos: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingData = false;
+        }
+    }
+
+    private async Task SearchMatchup()
+    {
+        errorMessage = null;
+        searchCompleted = false;
+        matchup = null;
+
+        if (selectedPlayerChampionId == 0 || selectedEnemyChampionId == 0 || selectedRoleId == 0)
+        {
+            errorMessage = "Por favor selecciona todos los campos";
+            return;
+        }
+
+        if (selectedPlayerChampionId == selectedEnemyChampionId)
+        {
+            errorMessage = "Los campeones no pueden ser iguales";
+            return;
+        }
+
+        isSearching = true;
+
+        try
+        {
+            matchup = await MatchupService.SearchMatchupAsync(
+                selectedPlayerChampionId,
+                selectedEnemyChampionId,
+                selectedRoleId
+            );
+            searchCompleted = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al buscar matchup: {ex.Message}";
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private string GetDifficultyBadgeClass(string difficulty)
+    {
+        return difficulty switch
+        {
+            "Easy" => "bg-success",
+            "Medium" => "bg-warning",
+            "Hard" => "bg-danger",
+            "Extreme" => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void ViewMatchupDetails()
+    {
+        if (matchup != null)
+        {
+            Navigation.NavigateTo($"/matchup/{matchup.Id}");
+        }
+    }
+}

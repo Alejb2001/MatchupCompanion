@@ -1,0 +1,207 @@
+@page "/create-matchup"
+@using MatchupCompanion.Shared.Models
+@using MatchupCompanion.Client.Services
+@using System.ComponentModel.DataAnnotations
+@inject IMatchupService MatchupService
+@inject IChampionService ChampionService
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+
+<PageTitle>Crear Matchup</PageTitle>
+
+<div class="container mt-4">
+    <h1>Crear Nuevo Matchup</h1>
+    <p class="lead">Comparte tu conocimiento sobre un matchup específico</p>
+
+    <div class="row mt-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-body">
+                    @if (isLoadingData)
+                    {
+                        <div class="text-center my-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando datos...</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="@createMatchupDto" OnValidSubmit="@HandleSubmit">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label for="playerChampion" class="form-label">Tu Campeón *</label>
+                                <InputSelect id="playerChampion" class="form-select"
+                                             @bind-Value="createMatchupDto.PlayerChampionId">
+                                    <option value="0">-- Selecciona tu campeón --</option>
+                                    @foreach (var champion in champions)
+                                    {
+                                        <option value="@champion.Id">@champion.Name</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => createMatchupDto.PlayerChampionId)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="enemyChampion" class="form-label">Campeón Enemigo *</label>
+                                <InputSelect id="enemyChampion" class="form-select"
+                                             @bind-Value="createMatchupDto.EnemyChampionId">
+                                    <option value="0">-- Selecciona el campeón enemigo --</option>
+                                    @foreach (var champion in champions)
+                                    {
+                                        <option value="@champion.Id">@champion.Name</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => createMatchupDto.EnemyChampionId)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="role" class="form-label">Rol *</label>
+                                <InputSelect id="role" class="form-select"
+                                             @bind-Value="createMatchupDto.RoleId">
+                                    <option value="0">-- Selecciona el rol --</option>
+                                    @foreach (var role in roles)
+                                    {
+                                        <option value="@role.Id">@role.Name</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => createMatchupDto.RoleId)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="difficulty" class="form-label">Dificultad *</label>
+                                <InputSelect id="difficulty" class="form-select"
+                                             @bind-Value="createMatchupDto.Difficulty">
+                                    <option value="">-- Selecciona la dificultad --</option>
+                                    <option value="Easy">Easy - Fácil de ganar</option>
+                                    <option value="Medium">Medium - Balanceado</option>
+                                    <option value="Hard">Hard - Difícil</option>
+                                    <option value="Extreme">Extreme - Muy difícil</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => createMatchupDto.Difficulty)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="generalAdvice" class="form-label">Consejo General</label>
+                                <InputTextArea id="generalAdvice" class="form-control" rows="4"
+                                               @bind-Value="createMatchupDto.GeneralAdvice"
+                                               placeholder="Escribe un consejo general sobre cómo jugar este matchup..." />
+                                <ValidationMessage For="@(() => createMatchupDto.GeneralAdvice)" />
+                                <small class="form-text text-muted">Máximo 1000 caracteres</small>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(errorMessage))
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    @errorMessage
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(successMessage))
+                            {
+                                <div class="alert alert-success" role="alert">
+                                    @successMessage
+                                </div>
+                            }
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg" disabled="@isSubmitting">
+                                    @if (isSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        <span>Creando...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Crear Matchup</span>
+                                    }
+                                </button>
+                                <button type="button" class="btn btn-secondary" @onclick="Cancel">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CreateMatchupDto createMatchupDto = new();
+    private List<ChampionDto> champions = new();
+    private List<RoleDto> roles = new();
+
+    private bool isLoadingData = true;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoadingData = true;
+        try
+        {
+            champions = await ChampionService.GetAllChampionsAsync();
+            roles = await RoleService.GetAllRolesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar datos: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingData = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (createMatchupDto.PlayerChampionId == createMatchupDto.EnemyChampionId)
+        {
+            errorMessage = "Los campeones no pueden ser iguales";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            var result = await MatchupService.CreateMatchupAsync(createMatchupDto);
+
+            if (result != null)
+            {
+                successMessage = "Matchup creado exitosamente. Redirigiendo...";
+                await Task.Delay(1500);
+                Navigation.NavigateTo($"/matchup/{result.Id}");
+            }
+            else
+            {
+                errorMessage = "No se pudo crear el matchup";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al crear matchup: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/matchups");
+    }
+}

@@ -1,0 +1,169 @@
+@page "/matchups"
+@using MatchupCompanion.Shared.Models
+@using MatchupCompanion.Client.Services
+@inject IMatchupService MatchupService
+@inject NavigationManager Navigation
+
+<PageTitle>Todos los Matchups</PageTitle>
+
+<div class="container mt-4">
+    <h1>Todos los Matchups</h1>
+    <p class="lead">Explora todos los matchups disponibles</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando matchups...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+    else if (matchups.Count == 0)
+    {
+        <div class="alert alert-info" role="alert">
+            No hay matchups disponibles. <a href="/create-matchup">Crea el primero</a>
+        </div>
+    }
+    else
+    {
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control" placeholder="Filtrar por nombre de campeón..."
+                       @bind="filterText" @bind:event="oninput" />
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="text-muted">Mostrando @filteredMatchups.Count de @matchups.Count matchups</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Tu Campeón</th>
+                        <th>VS</th>
+                        <th>Campeón Enemigo</th>
+                        <th>Rol</th>
+                        <th>Dificultad</th>
+                        <th>Tips</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var matchup in filteredMatchups)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@matchup.PlayerChampion.Name</strong>
+                            </td>
+                            <td class="text-center">VS</td>
+                            <td>
+                                <strong>@matchup.EnemyChampion.Name</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">@matchup.Role.Name</span>
+                            </td>
+                            <td>
+                                <span class="badge @GetDifficultyBadgeClass(matchup.Difficulty)">
+                                    @matchup.Difficulty
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">@matchup.Tips.Count tips</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" @onclick="() => ViewMatchup(matchup.Id)">
+                                    Ver Detalles
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<MatchupDto> matchups = new();
+    private List<MatchupDto> filteredMatchups = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMatchups();
+    }
+
+    private async Task LoadMatchups()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            matchups = await MatchupService.GetAllMatchupsAsync();
+            filteredMatchups = matchups;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"No se pudieron cargar los matchups: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void FilterMatchups()
+    {
+        if (string.IsNullOrWhiteSpace(filterText))
+        {
+            filteredMatchups = matchups;
+        }
+        else
+        {
+            var filter = filterText.ToLower();
+            filteredMatchups = matchups.Where(m =>
+                m.PlayerChampion.Name.ToLower().Contains(filter) ||
+                m.EnemyChampion.Name.ToLower().Contains(filter) ||
+                m.Role.Name.ToLower().Contains(filter)
+            ).ToList();
+        }
+    }
+
+    private string filterText
+    {
+        get => _filterText;
+        set
+        {
+            _filterText = value;
+            FilterMatchups();
+        }
+    }
+    private string _filterText = string.Empty;
+
+    private string GetDifficultyBadgeClass(string difficulty)
+    {
+        return difficulty switch
+        {
+            "Easy" => "bg-success",
+            "Medium" => "bg-warning",
+            "Hard" => "bg-danger",
+            "Extreme" => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void ViewMatchup(int id)
+    {
+        Navigation.NavigateTo($"/matchup/{id}");
+    }
+}
