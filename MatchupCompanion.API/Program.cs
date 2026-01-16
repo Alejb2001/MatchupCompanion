@@ -75,16 +75,13 @@ var app = builder.Build();
 
 // Configuración del pipeline de requests HTTP
 
-// Swagger en desarrollo y producción (para testing)
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger (en desarrollo y producción para testing)
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Matchup Companion API v1");
-        options.RoutePrefix = string.Empty; // Swagger UI en la raíz: http://localhost:5000/
-    });
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Matchup Companion API v1");
+    options.RoutePrefix = string.Empty; // Swagger UI en la raíz
+});
 
 app.UseHttpsRedirection();
 

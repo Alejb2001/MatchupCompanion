@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using MatchupCompanion.API.Data.Repositories.Interfaces;
 using MatchupCompanion.API.Models.Entities;
 
@@ -110,11 +111,12 @@ public class RiotApiService
                     existingChampion.ImageUrl = $"{DataDragonBaseUrl}/cdn/{version}/img/champion/{champion.Image.Full}";
 
                     await _championRepository.UpdateAsync(existingChampion);
+                    syncedCount++;
                     _logger.LogInformation("Campeón actualizado: {ChampionName}", existingChampion.Name);
                 }
             }
 
-            _logger.LogInformation("Sincronización completada. {Count} campeones procesados", syncedCount);
+            _logger.LogInformation("Sincronización completada. {Count} campeones sincronizados", syncedCount);
             return syncedCount;
         }
         catch (Exception ex)
@@ -145,33 +147,70 @@ public class RiotApiService
 
     private class RiotChampionResponse
     {
+        [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("format")]
         public string Format { get; set; } = string.Empty;
+
+        [JsonPropertyName("version")]
         public string Version { get; set; } = string.Empty;
+
+        [JsonPropertyName("data")]
         public Dictionary<string, RiotChampion> Data { get; set; } = new();
     }
 
     private class RiotChampion
     {
+        [JsonPropertyName("version")]
         public string Version { get; set; } = string.Empty;
+
+        [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("key")]
         public string Key { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("title")]
         public string Title { get; set; } = string.Empty;
+
+        [JsonPropertyName("blurb")]
         public string Blurb { get; set; } = string.Empty;
+
+        [JsonPropertyName("image")]
         public RiotChampionImage Image { get; set; } = new();
+
+        [JsonPropertyName("tags")]
         public List<string> Tags { get; set; } = new();
+
+        [JsonPropertyName("partype")]
         public string Partype { get; set; } = string.Empty;
     }
 
     private class RiotChampionImage
     {
+        [JsonPropertyName("full")]
         public string Full { get; set; } = string.Empty;
+
+        [JsonPropertyName("sprite")]
         public string Sprite { get; set; } = string.Empty;
+
+        [JsonPropertyName("group")]
         public string Group { get; set; } = string.Empty;
+
+        [JsonPropertyName("x")]
         public int X { get; set; }
+
+        [JsonPropertyName("y")]
         public int Y { get; set; }
+
+        [JsonPropertyName("w")]
         public int W { get; set; }
+
+        [JsonPropertyName("h")]
         public int H { get; set; }
     }
 
