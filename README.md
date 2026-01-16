@@ -136,6 +136,8 @@ MatchupCompanion/
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Detalles de arquitectura y patrones
 - [PROJECT-STATUS.md](PROJECT-STATUS.md) - Estado actual y próximos pasos
 
+> **Estado Actual**: Backend funcional con sincronización de campeones desde Data Dragon de Riot Games. Base de datos SQL Server LocalDB configurada con 172 campeones sincronizados.
+
 ---
 
 **Creado por Alejandro Burciaga Calzadillas**
