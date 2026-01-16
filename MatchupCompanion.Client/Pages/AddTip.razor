@@ -1,0 +1,197 @@
+@page "/add-tip/{matchupId:int}"
+@using MatchupCompanion.Shared.Models
+@using MatchupCompanion.Client.Services
+@inject IMatchupService MatchupService
+@inject NavigationManager Navigation
+
+<PageTitle>Agregar Tip</PageTitle>
+
+<div class="container mt-4">
+    <h1>Agregar Tip al Matchup</h1>
+
+    @if (isLoadingMatchup)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (matchup == null)
+    {
+        <div class="alert alert-danger" role="alert">
+            No se pudo cargar el matchup
+        </div>
+        <button class="btn btn-secondary" @onclick="Cancel">Volver</button>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            <strong>Matchup:</strong> @matchup.PlayerChampion.Name VS @matchup.EnemyChampion.Name (@matchup.Role.Name)
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <EditForm Model="@createTipDto" OnValidSubmit="@HandleSubmit">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Categoría *</label>
+                                <InputSelect id="category" class="form-select"
+                                             @bind-Value="createTipDto.Category">
+                                    <option value="">-- Selecciona una categoría --</option>
+                                    <option value="EarlyGame">Early Game - Fase inicial</option>
+                                    <option value="MidGame">Mid Game - Fase media</option>
+                                    <option value="LateGame">Late Game - Fase tardía</option>
+                                    <option value="Items">Items - Objetos recomendados</option>
+                                    <option value="Runes">Runes - Runas recomendadas</option>
+                                    <option value="Abilities">Abilities - Uso de habilidades</option>
+                                    <option value="General">General - Consejos generales</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => createTipDto.Category)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Contenido del Tip *</label>
+                                <InputTextArea id="content" class="form-control" rows="6"
+                                               @bind-Value="createTipDto.Content"
+                                               placeholder="Escribe tu consejo aquí..." />
+                                <ValidationMessage For="@(() => createTipDto.Content)" />
+                                <small class="form-text text-muted">
+                                    Entre 10 y 2000 caracteres. Caracteres actuales: @(createTipDto.Content?.Length ?? 0)
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Prioridad *</label>
+                                <InputNumber id="priority" class="form-control"
+                                             @bind-Value="createTipDto.Priority"
+                                             min="1" max="10" />
+                                <ValidationMessage For="@(() => createTipDto.Priority)" />
+                                <small class="form-text text-muted">
+                                    1 = Baja prioridad, 10 = Alta prioridad
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="authorName" class="form-label">Tu Nombre (Opcional)</label>
+                                <InputText id="authorName" class="form-control"
+                                           @bind-Value="createTipDto.AuthorName"
+                                           placeholder="Ingresa tu nombre de invocador o apodo..." />
+                                <ValidationMessage For="@(() => createTipDto.AuthorName)" />
+                                <small class="form-text text-muted">Máximo 100 caracteres</small>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(errorMessage))
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    @errorMessage
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(successMessage))
+                            {
+                                <div class="alert alert-success" role="alert">
+                                    @successMessage
+                                </div>
+                            }
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg" disabled="@isSubmitting">
+                                    @if (isSubmitting)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        <span>Guardando...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Agregar Tip</span>
+                                    }
+                                </button>
+                                <button type="button" class="btn btn-secondary" @onclick="Cancel">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int MatchupId { get; set; }
+
+    private MatchupDto? matchup;
+    private CreateMatchupTipDto createTipDto = new();
+
+    private bool isLoadingMatchup = true;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        createTipDto.MatchupId = MatchupId;
+        createTipDto.Priority = 5; // Valor por defecto
+
+        await LoadMatchup();
+    }
+
+    private async Task LoadMatchup()
+    {
+        isLoadingMatchup = true;
+        try
+        {
+            matchup = await MatchupService.GetMatchupByIdAsync(MatchupId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar matchup: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingMatchup = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        successMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var result = await MatchupService.AddTipAsync(createTipDto);
+
+            if (result != null)
+            {
+                successMessage = "Tip agregado exitosamente. Redirigiendo...";
+                await Task.Delay(1500);
+                Navigation.NavigateTo($"/matchup/{MatchupId}");
+            }
+            else
+            {
+                errorMessage = "No se pudo agregar el tip";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al agregar tip: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo($"/matchup/{MatchupId}");
+    }
+}

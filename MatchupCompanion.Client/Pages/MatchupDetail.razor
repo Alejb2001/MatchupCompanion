@@ -1,0 +1,258 @@
+@page "/matchup/{id:int}"
+@using MatchupCompanion.Shared.Models
+@using MatchupCompanion.Client.Services
+@inject IMatchupService MatchupService
+@inject NavigationManager Navigation
+
+<PageTitle>Detalles del Matchup</PageTitle>
+
+<div class="container mt-4">
+    @if (isLoading)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando matchup...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>Error:</strong> @errorMessage
+        </div>
+        <button class="btn btn-secondary" @onclick="GoBack">Volver</button>
+    }
+    else if (matchup == null)
+    {
+        <div class="alert alert-warning" role="alert">
+            Matchup no encontrado
+        </div>
+        <button class="btn btn-secondary" @onclick="GoBack">Volver</button>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-lg-12">
+                <button class="btn btn-secondary mb-3" @onclick="GoBack">
+                    Volver
+                </button>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">
+                            @matchup.PlayerChampion.Name VS @matchup.EnemyChampion.Name
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Tu Campeón: @matchup.PlayerChampion.Name</h5>
+                                @if (!string.IsNullOrEmpty(matchup.PlayerChampion.Title))
+                                {
+                                    <p class="text-muted">@matchup.PlayerChampion.Title</p>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Campeón Enemigo: @matchup.EnemyChampion.Name</h5>
+                                @if (!string.IsNullOrEmpty(matchup.EnemyChampion.Title))
+                                {
+                                    <p class="text-muted">@matchup.EnemyChampion.Title</p>
+                                }
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Rol:</strong>
+                                <span class="badge bg-secondary ms-2">@matchup.Role.Name</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Dificultad:</strong>
+                                <span class="badge @GetDifficultyBadgeClass(matchup.Difficulty) ms-2">
+                                    @matchup.Difficulty
+                                </span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Tips:</strong>
+                                <span class="badge bg-info ms-2">@matchup.Tips.Count</span>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(matchup.GeneralAdvice))
+                        {
+                            <hr />
+                            <div class="alert alert-info" role="alert">
+                                <strong>Consejo General:</strong>
+                                <p class="mb-0 mt-2">@matchup.GeneralAdvice</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Tips y Consejos</h4>
+                        <button class="btn btn-sm btn-success" @onclick="NavigateToAddTip">
+                            Agregar Tip
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        @if (matchup.Tips.Count == 0)
+                        {
+                            <div class="alert alert-warning" role="alert">
+                                No hay tips para este matchup todavía.
+                                <a href="/add-tip/@matchup.Id" class="alert-link">Sé el primero en agregar uno</a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="accordion" id="tipsAccordion">
+                                @foreach (var category in GetGroupedTips())
+                                {
+                                    var categoryId = $"category-{category.Key.Replace(" ", "")}";
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="@($"heading-{categoryId}")">
+                                            <button class="accordion-button" type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="@($"#collapse-{categoryId}")"
+                                                    aria-expanded="true"
+                                                    aria-controls="@($"collapse-{categoryId}")">
+                                                <strong>@category.Key</strong>
+                                                <span class="badge bg-primary ms-2">@category.Value.Count tips</span>
+                                            </button>
+                                        </h2>
+                                        <div id="@($"collapse-{categoryId}")"
+                                             class="accordion-collapse collapse show"
+                                             aria-labelledby="@($"heading-{categoryId}")"
+                                             data-bs-parent="#tipsAccordion">
+                                            <div class="accordion-body">
+                                                @foreach (var tip in category.Value.OrderByDescending(t => t.Priority))
+                                                {
+                                                    <div class="card mb-2">
+                                                        <div class="card-body">
+                                                            <div class="d-flex justify-content-between align-items-start">
+                                                                <div class="flex-grow-1">
+                                                                    <p class="mb-2">@tip.Content</p>
+                                                                    @if (!string.IsNullOrEmpty(tip.AuthorName))
+                                                                    {
+                                                                        <small class="text-muted">
+                                                                            Por: @tip.AuthorName
+                                                                        </small>
+                                                                    }
+                                                                </div>
+                                                                <span class="badge bg-secondary">
+                                                                    Prioridad: @tip.Priority
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-lg-12 text-center">
+                <small class="text-muted">
+                    Creado: @matchup.CreatedAt.ToString("dd/MM/yyyy HH:mm") |
+                    Última actualización: @matchup.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+                </small>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private MatchupDto? matchup;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMatchup();
+    }
+
+    private async Task LoadMatchup()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            matchup = await MatchupService.GetMatchupByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"No se pudo cargar el matchup: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private Dictionary<string, List<MatchupTipDto>> GetGroupedTips()
+    {
+        if (matchup == null || matchup.Tips.Count == 0)
+            return new Dictionary<string, List<MatchupTipDto>>();
+
+        return matchup.Tips
+            .GroupBy(t => t.Category)
+            .ToDictionary(g => GetCategoryDisplayName(g.Key), g => g.ToList());
+    }
+
+    private string GetCategoryDisplayName(string category)
+    {
+        return category switch
+        {
+            "EarlyGame" => "Early Game",
+            "MidGame" => "Mid Game",
+            "LateGame" => "Late Game",
+            "Items" => "Items",
+            "Runes" => "Runas",
+            "Abilities" => "Habilidades",
+            "General" => "General",
+            _ => category
+        };
+    }
+
+    private string GetDifficultyBadgeClass(string difficulty)
+    {
+        return difficulty switch
+        {
+            "Easy" => "bg-success",
+            "Medium" => "bg-warning",
+            "Hard" => "bg-danger",
+            "Extreme" => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/matchups");
+    }
+
+    private void NavigateToAddTip()
+    {
+        Navigation.NavigateTo($"/add-tip/{Id}");
+    }
+}
