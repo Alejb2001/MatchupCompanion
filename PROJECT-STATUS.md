@@ -7,9 +7,10 @@
 
 ## 📊 Resumen Ejecutivo
 
-**Estado General**: ✅ Backend funcional y operativo
-**Versión**: 0.1.0 (Pre-alpha)
+**Estado General**: ✅ Backend y Frontend funcionales y operativos
+**Versión**: 0.2.0 (Alpha)
 **Base de Datos**: Configurada y poblada con 172 campeones
+**Frontend**: Blazor WebAssembly completamente implementado
 
 ---
 
@@ -111,14 +112,83 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 
 ---
 
-## 🚧 Componentes Pendientes
+### 2. Frontend (Blazor WebAssembly)
 
-### Frontend (Blazor WebAssembly)
-- ❌ No iniciado
-- Interfaz de usuario
-- Componentes de selección de campeones
-- Visualización de matchups
-- Formularios para crear/editar matchups y tips
+#### Infraestructura
+- ✅ Blazor WebAssembly configurado
+- ✅ HttpClient con base URL configurada (https://localhost:7285)
+- ✅ Inyección de dependencias configurada
+- ✅ Bootstrap 5 integrado
+- ✅ Navegación con NavMenu
+
+#### Servicios HTTP
+- ✅ `IChampionService` / `ChampionService` - Comunicación con API de campeones
+- ✅ `IRoleService` / `RoleService` - Comunicación con API de roles
+- ✅ `IMatchupService` / `MatchupService` - Comunicación con API de matchups
+
+**Métodos implementados**:
+- GetAllChampionsAsync(), GetChampionByIdAsync(int id), GetChampionsByRoleAsync(int roleId)
+- GetAllRolesAsync(), GetRoleByIdAsync(int id)
+- GetAllMatchupsAsync(), GetMatchupByIdAsync(int id), GetMatchupsByChampionAsync(int championId)
+- GetSpecificMatchupAsync(int playerChampionId, int enemyChampionId)
+- CreateMatchupAsync(CreateMatchupDto dto), CreateMatchupTipAsync(CreateMatchupTipDto dto)
+
+#### Páginas Implementadas
+
+**Home.razor**:
+- ✅ Página de bienvenida con descripción del proyecto
+- ✅ Enlaces a las funcionalidades principales
+
+**MatchupSearch.razor** (`/matchup-search`):
+- ✅ Selección de campeón jugador
+- ✅ Selección de campeón enemigo
+- ✅ Búsqueda de matchup específico
+- ✅ Navegación a detalles del matchup si existe
+- ✅ Redirección a creación si no existe
+
+**MatchupsList.razor** (`/matchups`):
+- ✅ Lista completa de matchups
+- ✅ Filtrado dinámico por nombre de campeón
+- ✅ Visualización de dificultad
+- ✅ Enlaces a detalles de cada matchup
+
+**MatchupDetail.razor** (`/matchup-detail/{id}`):
+- ✅ Información detallada del matchup
+- ✅ Visualización de campeones y rol
+- ✅ Lista de tips organizados
+- ✅ Navegación a agregar tips
+
+**CreateMatchup.razor** (`/create-matchup`):
+- ✅ Formulario para crear nuevo matchup
+- ✅ Selección de campeón jugador
+- ✅ Selección de campeón enemigo
+- ✅ Selección de rol
+- ✅ Selección de dificultad
+- ✅ Campo de consejos generales
+- ✅ Validación de formulario
+- ✅ Redirección después de crear
+
+**AddTip.razor** (`/add-tip/{matchupId}`):
+- ✅ Formulario para agregar tip a matchup
+- ✅ Selección de categoría (Early Game, Mid Game, Late Game, Items, Runes, General)
+- ✅ Campo de descripción del tip
+- ✅ Selección de prioridad (1-5)
+- ✅ Validación de formulario
+- ✅ Redirección a detalles del matchup después de agregar
+
+#### Modelos Compartidos (MatchupCompanion.Shared)
+
+**DTOs implementados**:
+- ✅ `ChampionDto` - Representación de campeón
+- ✅ `RoleDto` - Representación de rol
+- ✅ `MatchupDto` - Representación de matchup con navegación
+- ✅ `MatchupTipDto` - Representación de tip
+- ✅ `CreateMatchupDto` - DTO para crear matchup
+- ✅ `CreateMatchupTipDto` - DTO para crear tip
+
+---
+
+## 🚧 Componentes Pendientes
 
 ### Funcionalidades Adicionales
 - ❌ Autenticación y autorización (ASP.NET Core Identity)
@@ -260,6 +330,11 @@ JOIN Roles r ON m.RoleId = r.Id;
    - Solución: Remover la restricción `if (app.Environment.IsDevelopment())`
    - Ubicación: `Program.cs:79-84`
 
+4. **Variable Duplicada en MatchupsList** (16/01/2026)
+   - Problema: `error CS0102: El tipo 'MatchupsList' ya contiene una definición para 'filterText'`
+   - Solución: Remover declaración simple en línea 99, mantener propiedad con backing field
+   - Ubicación: `MatchupsList.razor:99`
+
 ### Configuración de Puertos
 
 **HTTP**: 5007
@@ -280,19 +355,20 @@ La API usa automáticamente la versión más reciente de Data Dragon.
 1. Implementar tests unitarios para servicios y repositorios
 2. Agregar validaciones más robustas en DTOs
 3. Implementar paginación en endpoints GET
-4. Agregar filtros y búsqueda en endpoints
+4. Agregar imágenes de campeones desde Data Dragon
+5. Mejorar UI/UX del frontend
 
 ### Mediano Plazo (1 mes)
-1. Iniciar desarrollo del frontend con Blazor
-2. Implementar autenticación básica
-3. Agregar caching para mejorar rendimiento
-4. Crear más seed data para testing
+1. Implementar autenticación básica con ASP.NET Core Identity
+2. Agregar caching para mejorar rendimiento
+3. Crear más seed data para testing
+4. Implementar edición y eliminación de matchups y tips
 
 ### Largo Plazo (2-3 meses)
 1. Sistema de votación para tips
 2. Estadísticas y analytics
 3. Deployment a Azure/AWS
-4. Integración con más APIs de Riot
+4. Integración con más APIs de Riot (match history, win rates)
 
 ---
 

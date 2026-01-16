@@ -1,11 +1,30 @@
 # Arquitectura del Sistema - Matchup Companion
 
-## Diagrama de Arquitectura
+## Diagrama de Arquitectura General
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Cliente (Frontend)                    │
-│              (Blazor WebAssembly / React / etc.)            │
+│                    Frontend (Cliente)                        │
+│                  Blazor WebAssembly SPA                      │
+│              (MatchupCompanion.Client)                       │
+│                                                              │
+│  ┌──────────────────    PAGES    ─────────────────────┐    │
+│  │  Home │ MatchupSearch │ MatchupsList               │    │
+│  │  MatchupDetail │ CreateMatchup │ AddTip            │    │
+│  └───────────────────────┬──────────────────────────────┘   │
+│                          │ Consume                          │
+│                          ▼                                   │
+│  ┌──────────────────  SERVICES  ─────────────────────┐     │
+│  │  IChampionService │ IRoleService                  │     │
+│  │  IMatchupService                                  │     │
+│  │  (HTTP communication via HttpClient)             │     │
+│  └───────────────────────┬──────────────────────────────┘  │
+│                          │ Uses                             │
+│                          ▼                                   │
+│  ┌──────────────────  SHARED DTOs  ───────────────────┐    │
+│  │  ChampionDto │ MatchupDto │ CreateMatchupDto       │    │
+│  │  (MatchupCompanion.Shared)                         │    │
+│  └────────────────────────────────────────────────────┘    │
 └────────────────────────┬────────────────────────────────────┘
                          │ HTTP/HTTPS
                          │ JSON REST API
@@ -601,6 +620,457 @@ info: RiotApiService[0]
       Sincronización completada. 172 campeones sincronizados
 ```
 
+## Arquitectura del Frontend (Blazor WebAssembly)
+
+### Estructura del Proyecto Client
+
+```
+MatchupCompanion.Client/
+├── Pages/                      # Razor pages (componentes con ruta)
+│   ├── Home.razor             # Página principal
+│   ├── MatchupSearch.razor    # Búsqueda de matchup
+│   ├── MatchupsList.razor     # Lista de matchups
+│   ├── MatchupDetail.razor    # Detalles de matchup
+│   ├── CreateMatchup.razor    # Crear matchup
+│   └── AddTip.razor           # Agregar tip
+├── Layout/                    # Componentes de layout
+│   ├── MainLayout.razor       # Layout principal
+│   └── NavMenu.razor          # Menú de navegación
+├── Services/                  # Servicios HTTP
+│   ├── IChampionService.cs    # Interfaz de servicio
+│   ├── ChampionService.cs     # Implementación
+│   ├── IRoleService.cs
+│   ├── RoleService.cs
+│   ├── IMatchupService.cs
+│   └── MatchupService.cs
+├── wwwroot/                   # Archivos estáticos
+│   ├── css/                   # Estilos
+│   └── index.html             # HTML base
+├── _Imports.razor             # Imports globales
+├── App.razor                  # Componente raíz
+└── Program.cs                 # Configuración de la app
+```
+
+### Patrón de Arquitectura Frontend
+
+El frontend sigue un patrón de **Component-Service Architecture**:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                   Razor Pages                            │
+│  (Presentación, interacción del usuario, validación)    │
+└───────────────────────┬──────────────────────────────────┘
+                        │ @inject
+                        │ Dependency Injection
+                        ▼
+┌──────────────────────────────────────────────────────────┐
+│              HTTP Services (IChampionService, etc.)       │
+│  (Lógica de comunicación con API, serialización)        │
+└───────────────────────┬──────────────────────────────────┘
+                        │ HttpClient
+                        │ JSON over HTTP
+                        ▼
+┌──────────────────────────────────────────────────────────┐
+│                 Backend API (REST)                       │
+│            https://localhost:7285/api/*                  │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Razor Pages - Responsabilidades
+
+**Home.razor** - Página de bienvenida
+- Descripción del proyecto
+- Enlaces a funcionalidades principales
+- Información de uso
+
+**MatchupSearch.razor** - Búsqueda de matchup específico
+```csharp
+@page "/matchup-search"
+@inject IChampionService ChampionService
+@inject IMatchupService MatchupService
+@inject NavigationManager Navigation
+
+// Flujo:
+// 1. Cargar todos los campeones
+// 2. Usuario selecciona campeón jugador
+// 3. Usuario selecciona campeón enemigo
+// 4. Buscar matchup específico con API
+// 5. Si existe: redirigir a detalles
+// 6. Si no existe: redirigir a crear matchup
+```
+
+**MatchupsList.razor** - Lista completa de matchups
+```csharp
+@page "/matchups"
+@inject IMatchupService MatchupService
+
+// Características:
+// - Filtrado en tiempo real por nombre de campeón
+// - Visualización de dificultad (Easy, Medium, Hard)
+// - Enlaces a detalles de cada matchup
+// - Manejo de estados: loading, error, empty, success
+```
+
+**MatchupDetail.razor** - Detalles de matchup
+```csharp
+@page "/matchup-detail/{id:int}"
+@inject IMatchupService MatchupService
+@inject NavigationManager Navigation
+
+[Parameter]
+public int Id { get; set; }
+
+// Muestra:
+// - Información del matchup (campeones, rol, dificultad)
+// - Consejos generales
+// - Lista de tips organizados por categoría
+// - Botón para agregar nuevo tip
+```
+
+**CreateMatchup.razor** - Formulario de creación
+```csharp
+@page "/create-matchup"
+@inject IChampionService ChampionService
+@inject IRoleService RoleService
+@inject IMatchupService MatchupService
+@inject NavigationManager Navigation
+
+// Validación:
+// - Campeón jugador requerido
+// - Campeón enemigo requerido
+// - Campeones deben ser diferentes
+// - Rol requerido
+// - Dificultad requerida
+```
+
+**AddTip.razor** - Agregar tip a matchup
+```csharp
+@page "/add-tip/{matchupId:int}"
+@inject IMatchupService MatchupService
+@inject NavigationManager Navigation
+
+[Parameter]
+public int MatchupId { get; set; }
+
+// Categorías disponibles:
+// - Early Game, Mid Game, Late Game
+// - Items, Runes, General
+// Prioridad: 1 (más importante) a 5 (menos importante)
+```
+
+### HTTP Services - Implementación
+
+Los servicios encapsulan toda la comunicación HTTP con la API:
+
+```csharp
+public interface IChampionService
+{
+    Task<List<ChampionDto>> GetAllChampionsAsync();
+    Task<ChampionDto?> GetChampionByIdAsync(int id);
+    Task<List<ChampionDto>> GetChampionsByRoleAsync(int roleId);
+}
+
+public class ChampionService : IChampionService
+{
+    private readonly HttpClient _httpClient;
+
+    public ChampionService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<List<ChampionDto>> GetAllChampionsAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<ChampionDto>>("/api/Champions")
+            ?? new List<ChampionDto>();
+    }
+
+    // Manejo de errores:
+    // - Retorna null/lista vacía en caso de error
+    // - El componente maneja el estado de error
+}
+```
+
+**Beneficios de este patrón**:
+- Separación de responsabilidades
+- Fácil testing (mock de servicios)
+- Reutilización entre componentes
+- Centralización de lógica HTTP
+
+### Configuración de Dependency Injection
+
+**Program.cs** - Configuración del frontend:
+
+```csharp
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
+
+// HttpClient configurado con base URL
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri("https://localhost:7285")
+});
+
+// Registro de servicios
+builder.Services.AddScoped<IChampionService, ChampionService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IMatchupService, MatchupService>();
+
+await builder.Build().RunAsync();
+```
+
+**Importante**:
+- HttpClient se registra con `AddScoped` (una instancia por "sesión")
+- Base URL apunta al backend API
+- Servicios se inyectan con `@inject` en Razor pages
+
+### Shared DTOs - Contratos de Datos
+
+El proyecto **MatchupCompanion.Shared** contiene los DTOs compartidos entre frontend y backend:
+
+```csharp
+// ChampionDto.cs
+public class ChampionDto
+{
+    public int Id { get; set; }
+    public string RiotChampionId { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
+}
+
+// CreateMatchupDto.cs
+public class CreateMatchupDto
+{
+    [Required]
+    public int PlayerChampionId { get; set; }
+
+    [Required]
+    public int EnemyChampionId { get; set; }
+
+    [Required]
+    public int RoleId { get; set; }
+
+    [Required]
+    [MaxLength(50)]
+    public string Difficulty { get; set; } = string.Empty;
+
+    [MaxLength(1000)]
+    public string? GeneralAdvice { get; set; }
+}
+```
+
+**Ventajas de Shared DTOs**:
+- Type safety entre frontend y backend
+- Evita duplicación de código
+- Validaciones compartidas (DataAnnotations)
+- Refactoring más seguro
+
+### Estado y Lifecycle en Blazor
+
+**Componente típico con estado**:
+
+```csharp
+@code {
+    private List<MatchupDto> matchups = new();
+    private List<MatchupDto> filteredMatchups = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            matchups = await MatchupService.GetAllMatchupsAsync();
+            filteredMatchups = matchups;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error al cargar matchups";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void FilterMatchups()
+    {
+        filteredMatchups = matchups
+            .Where(m => m.PlayerChampionName.Contains(filterText,
+                StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+}
+```
+
+**Lifecycle hooks usados**:
+- `OnInitializedAsync()` - Cargar datos al inicializar componente
+- `OnParametersSet()` - Reaccionar a cambios de parámetros (usado en MatchupDetail)
+- `StateHasChanged()` - Forzar re-render (raramente necesario)
+
+### Navegación entre Páginas
+
+**NavigationManager** - Inyectado para navegación programática:
+
+```csharp
+@inject NavigationManager Navigation
+
+private async Task SearchMatchup()
+{
+    var matchup = await MatchupService.GetSpecificMatchupAsync(
+        selectedPlayerChampion, selectedEnemyChampion);
+
+    if (matchup != null)
+    {
+        // Matchup existe, ir a detalles
+        Navigation.NavigateTo($"/matchup-detail/{matchup.Id}");
+    }
+    else
+    {
+        // Matchup no existe, ir a crear
+        Navigation.NavigateTo("/create-matchup");
+    }
+}
+```
+
+**NavLink** - Componente para links con estado activo:
+
+```csharp
+<NavLink class="nav-link" href="matchup-search">
+    Buscar Matchup
+</NavLink>
+
+// Automáticamente agrega clase "active" cuando la ruta coincide
+```
+
+### Validación de Formularios
+
+Blazor usa **EditForm** con validaciones de DataAnnotations:
+
+```razor
+<EditForm Model="@createMatchupDto" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Campeón Jugador</label>
+        <InputSelect @bind-Value="createMatchupDto.PlayerChampionId" class="form-select">
+            <option value="0">Seleccionar...</option>
+            @foreach (var champion in champions)
+            {
+                <option value="@champion.Id">@champion.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => createMatchupDto.PlayerChampionId)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Crear Matchup</button>
+</EditForm>
+```
+
+**Componentes de validación**:
+- `DataAnnotationsValidator` - Habilita validaciones de atributos [Required], [MaxLength], etc.
+- `ValidationSummary` - Muestra resumen de errores
+- `ValidationMessage` - Mensaje de error para campo específico
+- `OnValidSubmit` - Solo se ejecuta si el formulario es válido
+
+### Manejo de Errores en el Frontend
+
+**Estrategia actual**:
+
+```csharp
+try
+{
+    await MatchupService.CreateMatchupAsync(createMatchupDto);
+    Navigation.NavigateTo("/matchups");
+}
+catch (Exception ex)
+{
+    errorMessage = "Error al crear matchup. Por favor intenta de nuevo.";
+    // Logging futuro: enviar a servicio de telemetría
+}
+```
+
+**Próximas mejoras**:
+- Componente de notificaciones (toasts)
+- Manejo específico de errores HTTP (400, 401, 404, 500)
+- Error boundary para errores no controlados
+- Retry logic para requests fallidos
+
+### Bootstrap Integration
+
+El frontend usa **Bootstrap 5** para estilos:
+
+```html
+<!-- index.html -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+```
+
+**Componentes Bootstrap usados**:
+- Forms (form-control, form-select)
+- Buttons (btn, btn-primary, btn-danger)
+- Cards (card, card-body)
+- Layout (container, row, col)
+- Alerts (alert, alert-danger)
+- Spinners (spinner-border) para loading
+
+### Performance Considerations
+
+**Optimizaciones implementadas**:
+
+1. **Virtualization** (próximo paso)
+   - Para listas largas de campeones
+   - Usar `<Virtualize>` component
+
+2. **Lazy Loading**
+   - Blazor ya hace code splitting automático
+   - Solo carga componentes cuando se navega a ellos
+
+3. **Caching en Services**
+   ```csharp
+   private List<ChampionDto>? _cachedChampions;
+
+   public async Task<List<ChampionDto>> GetAllChampionsAsync()
+   {
+       if (_cachedChampions != null)
+           return _cachedChampions;
+
+       _cachedChampions = await _httpClient
+           .GetFromJsonAsync<List<ChampionDto>>("/api/Champions")
+           ?? new List<ChampionDto>();
+
+       return _cachedChampions;
+   }
+   ```
+
+4. **Debouncing en filtros**
+   - Evitar llamadas excesivas al filtrar
+   - Usar `System.Timers.Timer` o librería externa
+
+### Seguridad en el Frontend
+
+**Consideraciones actuales**:
+
+1. **No hay autenticación** (próximo paso)
+   - Implementar ASP.NET Core Identity
+   - JWT tokens en headers
+   - Redirección a login si no autenticado
+
+2. **XSS Protection**
+   - Blazor escapa HTML automáticamente
+   - Solo usar `@((MarkupString)html)` con datos confiables
+
+3. **CORS**
+   - Backend configurado para aceptar requests del frontend
+   - Producción: restringir a dominio específico
+
+4. **Validación client-side y server-side**
+   - DataAnnotations en DTOs compartidos
+   - Backend valida nuevamente (no confiar en frontend)
+
 ## Testing (Próximos Pasos)
 
 ### Unit Tests
@@ -758,5 +1228,5 @@ public async Task<ChampionDto?> GetChampionByIdAsync(int id)
 ---
 
 **Documentación generada:** 16 Enero 2026
-**Versión:** 1.1
-**Última actualización**: Integración con Data Dragon completada
+**Versión:** 2.0
+**Última actualización**: Frontend Blazor WebAssembly implementado completamente
