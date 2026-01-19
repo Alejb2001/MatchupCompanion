@@ -119,6 +119,82 @@ public class MatchupService : IMatchupService
         _logger.LogInformation("Matchup {MatchupId} eliminado", id);
     }
 
+    public async Task<MatchupDto> UpdateMatchupAsync(int id, UpdateMatchupRequest request)
+    {
+        var matchup = await _matchupRepository.GetByIdAsync(id);
+        if (matchup == null)
+            throw new ArgumentException($"Matchup con ID {id} no encontrado");
+
+        // Actualizar campos básicos
+        matchup.Difficulty = request.Difficulty;
+        matchup.GeneralAdvice = request.GeneralAdvice;
+
+        // Actualizar runas
+        matchup.PrimaryTreeId = request.PrimaryTreeId;
+        matchup.KeystoneId = request.KeystoneId;
+        matchup.PrimaryRune1Id = request.PrimaryRune1Id;
+        matchup.PrimaryRune2Id = request.PrimaryRune2Id;
+        matchup.PrimaryRune3Id = request.PrimaryRune3Id;
+        matchup.SecondaryTreeId = request.SecondaryTreeId;
+        matchup.SecondaryRune1Id = request.SecondaryRune1Id;
+        matchup.SecondaryRune2Id = request.SecondaryRune2Id;
+        matchup.StatShards = request.StatShards;
+
+        // Actualizar items
+        matchup.StartingItems = request.StartingItems;
+        matchup.CoreItems = request.CoreItems;
+        matchup.SituationalItems = request.SituationalItems;
+
+        // Actualizar estrategia
+        matchup.Strategy = request.Strategy;
+
+        matchup.UpdatedAt = DateTime.UtcNow;
+
+        await _matchupRepository.UpdateAsync(matchup);
+        _logger.LogInformation("Matchup {MatchupId} actualizado", id);
+
+        // Recargar con relaciones
+        var updatedMatchup = await _matchupRepository.GetByIdAsync(id);
+        return MapToDto(updatedMatchup!);
+    }
+
+    public async Task<MatchupDto> GetOrCreateMatchupAsync(int playerChampionId, int enemyChampionId, int roleId)
+    {
+        // Buscar matchup existente
+        var existingMatchup = await _matchupRepository.GetByChampionsAndRoleAsync(
+            playerChampionId, enemyChampionId, roleId);
+
+        if (existingMatchup != null)
+            return MapToDto(existingMatchup);
+
+        // Validar que los campeones existan
+        var playerChampion = await _championRepository.GetByIdAsync(playerChampionId);
+        if (playerChampion == null)
+            throw new ArgumentException($"Champion con ID {playerChampionId} no encontrado");
+
+        var enemyChampion = await _championRepository.GetByIdAsync(enemyChampionId);
+        if (enemyChampion == null)
+            throw new ArgumentException($"Champion con ID {enemyChampionId} no encontrado");
+
+        // Crear nuevo matchup vacío
+        var matchup = new Matchup
+        {
+            PlayerChampionId = playerChampionId,
+            EnemyChampionId = enemyChampionId,
+            RoleId = roleId,
+            Difficulty = "Medium", // Valor por defecto
+            GeneralAdvice = null
+        };
+
+        var createdMatchup = await _matchupRepository.CreateAsync(matchup);
+        _logger.LogInformation("Matchup creado (GetOrCreate): {PlayerChampionId} vs {EnemyChampionId} en {RoleId}",
+            playerChampionId, enemyChampionId, roleId);
+
+        // Recargar con las relaciones
+        var fullMatchup = await _matchupRepository.GetByIdAsync(createdMatchup.Id);
+        return MapToDto(fullMatchup!);
+    }
+
     /// <summary>
     /// Mapea una entidad Matchup a un DTO
     /// </summary>
@@ -157,6 +233,26 @@ public class MatchupService : IMatchupService
             },
             Difficulty = matchup.Difficulty,
             GeneralAdvice = matchup.GeneralAdvice,
+
+            // Runas
+            PrimaryTreeId = matchup.PrimaryTreeId,
+            KeystoneId = matchup.KeystoneId,
+            PrimaryRune1Id = matchup.PrimaryRune1Id,
+            PrimaryRune2Id = matchup.PrimaryRune2Id,
+            PrimaryRune3Id = matchup.PrimaryRune3Id,
+            SecondaryTreeId = matchup.SecondaryTreeId,
+            SecondaryRune1Id = matchup.SecondaryRune1Id,
+            SecondaryRune2Id = matchup.SecondaryRune2Id,
+            StatShards = matchup.StatShards,
+
+            // Items
+            StartingItems = matchup.StartingItems,
+            CoreItems = matchup.CoreItems,
+            SituationalItems = matchup.SituationalItems,
+
+            // Estrategia
+            Strategy = matchup.Strategy,
+
             Tips = matchup.Tips.Select(t => new MatchupTipDto
             {
                 Id = t.Id,

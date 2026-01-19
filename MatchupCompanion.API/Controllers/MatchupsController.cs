@@ -178,6 +178,68 @@ public class MatchupsController : ControllerBase
     }
 
     /// <summary>
+    /// Actualiza un matchup existente
+    /// </summary>
+    /// <param name="id">ID del matchup a actualizar</param>
+    /// <param name="request">Datos actualizados del matchup</param>
+    /// <returns>Matchup actualizado</returns>
+    /// <response code="200">Retorna el matchup actualizado</response>
+    /// <response code="400">Si los datos son inválidos</response>
+    /// <response code="404">Si el matchup no existe</response>
+    [HttpPut("{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateMatchup(int id, [FromBody] UpdateMatchupRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var matchup = await _matchupService.UpdateMatchupAsync(id, request);
+            return Ok(matchup);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Error al actualizar matchup {MatchupId}", id);
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Busca un matchup existente o crea uno nuevo vacío
+    /// </summary>
+    /// <param name="playerChampionId">ID del campeón del jugador</param>
+    /// <param name="enemyChampionId">ID del campeón enemigo</param>
+    /// <param name="roleId">ID del rol</param>
+    /// <returns>Matchup existente o nuevo</returns>
+    /// <response code="200">Retorna el matchup</response>
+    /// <response code="400">Si los parámetros son inválidos</response>
+    [HttpGet("find-or-create")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> FindOrCreateMatchup(
+        [FromQuery] int playerChampionId,
+        [FromQuery] int enemyChampionId,
+        [FromQuery] int roleId)
+    {
+        try
+        {
+            var matchup = await _matchupService.GetOrCreateMatchupAsync(
+                playerChampionId, enemyChampionId, roleId);
+            return Ok(matchup);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Error al buscar/crear matchup");
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Elimina un matchup
     /// </summary>
     /// <param name="id">ID del matchup a eliminar</param>

@@ -12,6 +12,12 @@ public interface IMatchupService
     Task<MatchupDto?> GetMatchupByChampionsAndRoleAsync(int playerChampionId, int enemyChampionId, int roleId);
     Task<IEnumerable<MatchupDto>> GetMatchupsByPlayerChampionAsync(int playerChampionId);
     Task<MatchupDto> CreateMatchupAsync(CreateMatchupRequest request);
+    Task<MatchupDto> UpdateMatchupAsync(int id, UpdateMatchupRequest request);
     Task<MatchupDto> AddTipToMatchupAsync(CreateMatchupTipRequest request);
     Task DeleteMatchupAsync(int id);
+
+    /// <summary>
+    /// Busca un matchup existente o crea uno nuevo vacío
+    /// </summary>
+    Task<MatchupDto> GetOrCreateMatchupAsync(int playerChampionId, int enemyChampionId, int roleId);
 }

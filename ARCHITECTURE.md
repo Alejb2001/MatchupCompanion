@@ -332,18 +332,22 @@ public class ChampionDto
        │ 1
        │
        │ N
-┌──────▼───────────────┐           ┌─────────────────┐
-│    Champion          │           │   Matchup       │
-│──────────────────────│           │─────────────────│
-│ Id (PK)              │◄─────────┤│ Id (PK)         │
-│ RiotChampionId       │ N   Player│ PlayerChampId   │
-│ Name                 │           │ EnemyChampId    │
-│ Title                │◄─────────┤│ RoleId          │
-│ ImageUrl             │ N   Enemy │ Difficulty      │
-│ PrimaryRoleId (FK)   │           │ GeneralAdvice   │
-│ CreatedAt            │           └────────┬────────┘
-│ UpdatedAt            │                    │ 1
-└──────────────────────┘                    │
+┌──────▼───────────────┐           ┌─────────────────────────────┐
+│    Champion          │           │   Matchup                   │
+│──────────────────────│           │─────────────────────────────│
+│ Id (PK)              │◄─────────┤│ Id (PK)                     │
+│ RiotChampionId       │ N   Player│ PlayerChampionId            │
+│ Name                 │           │ EnemyChampionId             │
+│ Title                │◄─────────┤│ RoleId                      │
+│ ImageUrl             │ N   Enemy │ Difficulty                  │
+│ PrimaryRoleId (FK)   │           │ GeneralAdvice               │
+│ CreatedAt            │           │ StrategyNotes               │
+│ UpdatedAt            │           │ StartingItems (JSON)        │
+└──────────────────────┘           │ CoreItems (JSON)            │
+                                   │ SituationalItems (JSON)     │
+                                   │ RecommendedRunes (JSON)     │
+                                   └────────┬────────────────────┘
+                                            │ 1
                                             │ N
                                    ┌────────▼────────┐
                                    │  MatchupTip     │
@@ -356,6 +360,20 @@ public class ChampionDto
                                    │ AuthorName      │
                                    │ CreatedAt       │
                                    └─────────────────┘
+
+┌─────────────────────┐           ┌─────────────────────┐
+│   Rune              │           │   Item              │
+│─────────────────────│           │─────────────────────│
+│ Id (PK)             │           │ Id (PK)             │
+│ RiotRuneId          │           │ RiotItemId          │
+│ Name                │           │ Name                │
+│ Description         │           │ Description         │
+│ ImageUrl            │           │ ImageUrl            │
+│ Slot                │           │ Gold (cost)         │
+│ Tree                │           │ CreatedAt           │
+│ CreatedAt           │           │ UpdatedAt           │
+│ UpdatedAt           │           └─────────────────────┘
+└─────────────────────┘
 ```
 
 ### Relaciones Clave
@@ -365,6 +383,8 @@ public class ChampionDto
 3. **Matchup → Champion (Enemy)**: Muchos a Uno
 4. **Matchup → Role**: Muchos a Uno
 5. **Matchup → MatchupTip**: Uno a Muchos
+6. **Matchup → Items**: Referencia por RiotItemId en campos JSON (StartingItems, CoreItems, SituationalItems)
+7. **Matchup → Runes**: Referencia por RiotRuneId en campo JSON (RecommendedRunes)
 
 ### Índices Importantes
 
@@ -379,6 +399,12 @@ CREATE INDEX IX_Champion_Name ON Champions (Name);
 -- Búsqueda por RiotChampionId
 CREATE UNIQUE INDEX IX_Champion_RiotChampionId
 ON Champions (RiotChampionId);
+
+-- Búsqueda por RiotItemId
+CREATE UNIQUE INDEX IX_Item_RiotItemId ON Items (RiotItemId);
+
+-- Búsqueda por RiotRuneId
+CREATE UNIQUE INDEX IX_Rune_RiotRuneId ON Runes (RiotRuneId);
 ```
 
 ## Seguridad y Buenas Prácticas
@@ -446,6 +472,8 @@ public class RiotApiService
 {
     private readonly HttpClient _httpClient;
     private readonly IChampionRepository _championRepository;
+    private readonly IRuneRepository _runeRepository;
+    private readonly IItemRepository _itemRepository;
     private readonly ILogger<RiotApiService> _logger;
 
     // URL base de Data Dragon
@@ -457,19 +485,29 @@ public class RiotApiService
         // URL: https://ddragon.leagueoflegends.com/api/versions.json
     }
 
-    public async Task<int> SyncChampionsFromRiotAsync(string language = "en_US")
+    public async Task<int> SyncChampionsFromRiotAsync(string language = "es_ES")
     {
         // Sincroniza campeones desde:
         // https://ddragon.leagueoflegends.com/cdn/{version}/data/{language}/champion.json
+    }
 
-        // 1. Obtiene versión actual
-        // 2. Descarga JSON de campeones
-        // 3. Deserializa con [JsonPropertyName]
-        // 4. Crea/actualiza cada campeón en BD
-        // 5. Retorna cantidad sincronizada
+    public async Task<int> SyncRunesFromRiotAsync(string language = "es_ES")
+    {
+        // Sincroniza runas desde:
+        // https://ddragon.leagueoflegends.com/cdn/{version}/data/{language}/runesReforged.json
+    }
+
+    public async Task<int> SyncItemsFromRiotAsync(string language = "es_ES")
+    {
+        // Sincroniza items desde:
+        // https://ddragon.leagueoflegends.com/cdn/{version}/data/{language}/item.json
+        // Incluye limpieza de tags HTML en nombres
     }
 }
 ```
+
+**Sincronización automática al iniciar:**
+El API sincroniza automáticamente campeones, runas e items al iniciar si la BD está vacía (Program.cs).
 
 ### Deserialización JSON - Clases Internas
 
@@ -1227,6 +1265,6 @@ public async Task<ChampionDto?> GetChampionByIdAsync(int id)
 
 ---
 
-**Documentación generada:** 16 Enero 2026
-**Versión:** 2.0
-**Última actualización**: Frontend Blazor WebAssembly implementado completamente
+**Documentación generada:** 19 Enero 2026
+**Versión:** 3.0
+**Última actualización**: Entidades Rune e Item añadidas, sincronización en español, campos de estrategia en Matchup

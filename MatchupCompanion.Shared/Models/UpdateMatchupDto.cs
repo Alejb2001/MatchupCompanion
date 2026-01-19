@@ -1,15 +1,18 @@
-namespace MatchupCompanion.API.Models.DTOs;
+using System.ComponentModel.DataAnnotations;
+
+namespace MatchupCompanion.Shared.Models;
 
 /// <summary>
-/// DTO para transferir información de un matchup completo
+/// DTO para actualizar un matchup existente
 /// </summary>
-public class MatchupDto
+public class UpdateMatchupDto
 {
-    public int Id { get; set; }
-    public ChampionDto PlayerChampion { get; set; } = null!;
-    public ChampionDto EnemyChampion { get; set; } = null!;
-    public RoleDto Role { get; set; } = null!;
+    [Required(ErrorMessage = "Difficulty es requerido")]
+    [RegularExpression("^(Easy|Medium|Hard|Extreme)$",
+        ErrorMessage = "Difficulty debe ser: Easy, Medium, Hard o Extreme")]
     public string Difficulty { get; set; } = string.Empty;
+
+    [MaxLength(1000, ErrorMessage = "GeneralAdvice no puede exceder 1000 caracteres")]
     public string? GeneralAdvice { get; set; }
 
     // Runas primarias
@@ -25,17 +28,20 @@ public class MatchupDto
     public int? SecondaryRune2Id { get; set; }
 
     // Stat shards
+    [MaxLength(100)]
     public string? StatShards { get; set; }
 
     // Items
+    [MaxLength(200)]
     public string? StartingItems { get; set; }
+
+    [MaxLength(200)]
     public string? CoreItems { get; set; }
+
+    [MaxLength(200)]
     public string? SituationalItems { get; set; }
 
     // Estrategia
+    [MaxLength(5000, ErrorMessage = "Strategy no puede exceder 5000 caracteres")]
     public string? Strategy { get; set; }
-
-    public List<MatchupTipDto> Tips { get; set; } = new();
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
 }

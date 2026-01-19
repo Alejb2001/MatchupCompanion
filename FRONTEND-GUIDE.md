@@ -4,6 +4,8 @@
 
 Esta guía documenta la implementación completa del frontend Blazor WebAssembly para Matchup Companion.
 
+**Última actualización**: 19 de Enero, 2026
+
 ## Arquitectura del Frontend
 
 ### Estructura de Archivos
@@ -16,13 +18,18 @@ MatchupCompanion.Client/
 │   ├── IRoleService.cs            # Interface para RoleService
 │   ├── RoleService.cs             # Servicio de roles
 │   ├── IMatchupService.cs         # Interface para MatchupService
-│   └── MatchupService.cs          # Servicio de matchups y tips
+│   ├── MatchupService.cs          # Servicio de matchups y tips
+│   ├── IRuneService.cs            # Interface para RuneService
+│   ├── RuneService.cs             # Servicio de runas
+│   ├── IItemService.cs            # Interface para ItemService
+│   └── ItemService.cs             # Servicio de items
 ├── Pages/                          # Páginas Razor Components
 │   ├── Home.razor                 # Página principal
 │   ├── MatchupsList.razor         # Lista de todos los matchups
 │   ├── MatchupSearch.razor        # Búsqueda de matchup específico
 │   ├── MatchupDetail.razor        # Vista detallada de matchup
 │   ├── CreateMatchup.razor        # Crear nuevo matchup
+│   ├── EditMatchup.razor          # Editar matchup (con autocompletado)
 │   └── AddTip.razor               # Agregar tip a matchup
 ├── Layout/                         # Componentes de layout
 │   ├── MainLayout.razor           # Layout principal
@@ -43,7 +50,10 @@ MatchupCompanion.Shared/
     ├── MatchupDto.cs
     ├── MatchupTipDto.cs
     ├── CreateMatchupDto.cs
-    └── CreateMatchupTipDto.cs
+    ├── UpdateMatchupDto.cs
+    ├── CreateMatchupTipDto.cs
+    ├── RuneDto.cs
+    └── ItemDto.cs
 ```
 
 ## Servicios HTTP
@@ -82,12 +92,27 @@ MatchupCompanion.Shared/
 - `GetMatchupByIdAsync(int id)`: Obtiene matchup por ID
 - `SearchMatchupAsync(int, int, int)`: Busca matchup específico
 - `CreateMatchupAsync(CreateMatchupDto)`: Crea nuevo matchup
+- `UpdateMatchupAsync(UpdateMatchupDto)`: Actualiza matchup existente
 - `AddTipAsync(CreateMatchupTipDto)`: Agrega tip a matchup
 
 **Características**:
 - Manejo de código HTTP 404 en búsqueda
 - Lanza excepciones en operaciones de escritura
 - Logging en consola para debugging
+
+### 4. RuneService
+
+**Ubicación**: `Services/RuneService.cs`
+
+**Funcionalidades**:
+- `GetAllRunesAsync()`: Obtiene todas las runas
+
+### 5. ItemService
+
+**Ubicación**: `Services/ItemService.cs`
+
+**Funcionalidades**:
+- `GetAllItemsAsync()`: Obtiene todos los items
 
 ## Páginas
 
@@ -197,7 +222,49 @@ MatchupCompanion.Shared/
 - `successMessage`: Mensaje de éxito
 - `errorMessage`: Mensaje de error
 
-### 6. AddTip.razor (`/add-tip/{matchupId}`)
+### 6. EditMatchup.razor (`/edit-matchup/{id}`)
+
+**Propósito**: Formulario para editar matchup con búsqueda por autocompletado
+
+**Funcionalidades**:
+- Campos de texto con autocompletado para campeones (no dropdowns)
+- Campo de texto con autocompletado para búsqueda de items
+- Selección de items por categoría con botones (+Ini, +Core, +Sit)
+- Badges mostrando items seleccionados con botón de eliminar
+- Dropdown solo para rol (5 opciones fijas)
+- Campo de notas de estrategia
+- Validación de formulario
+- Redirección después de guardar
+
+**Patrón de autocompletado**:
+```razor
+<input type="text" @bind="searchText" @bind:event="oninput" />
+@if (filteredList.Any())
+{
+    <ul class="list-group">
+        @foreach (var item in filteredList.Take(10))
+        {
+            <li @onclick="@(() => SelectItem(item))">@item.Name</li>
+        }
+    </ul>
+}
+```
+
+**Importante - Sintaxis Razor para onclick con strings**:
+```razor
+<!-- CORRECTO -->
+@onclick="@(() => AddItemToList(item.Id, "starting"))"
+
+<!-- INCORRECTO - causa error de compilación -->
+@onclick="AddItemToList(item.Id, \"starting\")"
+```
+
+**Estados**:
+- `playerSearchText`, `enemySearchText`, `itemSearchText`: Texto de búsqueda
+- `filteredChampionsForPlayer`, `filteredChampionsForEnemy`, `filteredItems`: Listas filtradas
+- `startingItemIds`, `coreItemIds`, `situationalItemIds`: IDs de items seleccionados
+
+### 7. AddTip.razor (`/add-tip/{matchupId}`)
 
 **Propósito**: Agregar tip a matchup existente
 
@@ -225,20 +292,23 @@ MatchupCompanion.Shared/
 ### Program.cs
 
 ```csharp
-// HttpClient configurado con URL del API
+// HttpClient configurado con URL del API (HTTP, no HTTPS para evitar problemas de certificado)
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:7285")
+    BaseAddress = new Uri("http://localhost:5007/")
 });
 
 // Registro de servicios
 builder.Services.AddScoped<IChampionService, ChampionService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IMatchupService, MatchupService>();
+builder.Services.AddScoped<IRuneService, RuneService>();
+builder.Services.AddScoped<IItemService, ItemService>();
 ```
 
 **Importante**:
-- API debe correr en `https://localhost:7285`
+- API debe correr en `http://localhost:5007`
+- Se usa HTTP en lugar de HTTPS para evitar problemas de certificado SSL en desarrollo
 - Si cambias el puerto, actualiza aquí
 
 ### _Imports.razor
@@ -290,11 +360,26 @@ Ubicados en `MatchupCompanion.Shared/Models/`
 - Difficulty, GeneralAdvice
 - Validaciones con DataAnnotations
 
+### UpdateMatchupDto
+- Id, PlayerChampionId, EnemyChampionId, RoleId
+- Difficulty, GeneralAdvice, StrategyNotes
+- StartingItems, CoreItems, SituationalItems (listas de strings con RiotItemId)
+- RecommendedRunes (lista de strings con RiotRuneId)
+- Validaciones con DataAnnotations
+
 ### CreateMatchupTipDto
 - MatchupId, Category, Content
 - Priority (default: 5)
 - AuthorName (opcional)
 - Validaciones con DataAnnotations
+
+### RuneDto
+- Id, RiotRuneId, Name, Description
+- ImageUrl, Slot, Tree
+
+### ItemDto
+- Id, RiotItemId, Name, Description
+- ImageUrl, Gold
 
 ## Patrones y Buenas Prácticas
 
@@ -393,10 +478,13 @@ else
 ```
 GET  /api/Champions                                          → Lista de campeones
 GET  /api/Roles                                              → Lista de roles
+GET  /api/Runes                                              → Lista de runas
+GET  /api/Items                                              → Lista de items
 GET  /api/Matchups                                           → Lista de matchups
 GET  /api/Matchups/{id}                                      → Matchup por ID
 GET  /api/Matchups/search?playerChampionId=&enemyChampionId=&roleId= → Búsqueda
 POST /api/Matchups                                           → Crear matchup
+PUT  /api/Matchups/{id}                                      → Actualizar matchup
 POST /api/MatchupTips                                        → Agregar tip
 ```
 
@@ -423,10 +511,11 @@ dotnet run
 ### Error CORS
 - Verificar que API tiene CORS configurado
 - Verificar URL en Program.cs del cliente
+- **Usar HTTP en lugar de HTTPS** para evitar problemas de certificado SSL
 
 ### Error 404 en llamadas
 - Verificar que API esté corriendo
-- Verificar BaseAddress en Program.cs
+- Verificar BaseAddress en Program.cs (debe ser `http://localhost:5007/`)
 - Verificar que endpoints existan
 
 ### Validación no funciona
@@ -436,8 +525,12 @@ dotnet run
 
 ### Datos no cargan
 - Revisar consola del browser (F12)
-- Verificar que API responda (Swagger)
+- Verificar que API responda (Swagger en http://localhost:5007)
 - Verificar servicios registrados en Program.cs
+
+### Error de compilación con comillas en Razor
+- Usar `@(() => Method("string"))` en lugar de `Method(\"string\")`
+- Las comillas escapadas dentro de atributos Razor causan errores
 
 ## Próximas Mejoras
 

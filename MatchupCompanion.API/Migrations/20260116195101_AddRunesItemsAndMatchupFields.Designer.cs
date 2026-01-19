@@ -4,6 +4,7 @@ using MatchupCompanion.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MatchupCompanion.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260116195101_AddRunesItemsAndMatchupFields")]
+    partial class AddRunesItemsAndMatchupFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,32 +78,32 @@ namespace MatchupCompanion.API.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 1, 19, 18, 16, 7, 546, DateTimeKind.Utc).AddTicks(3970),
+                            CreatedAt = new DateTime(2026, 1, 16, 19, 51, 1, 103, DateTimeKind.Utc).AddTicks(9015),
                             Name = "Aatrox",
                             PrimaryRoleId = 1,
                             RiotChampionId = "266",
                             Title = "the Darkin Blade",
-                            UpdatedAt = new DateTime(2026, 1, 19, 18, 16, 7, 546, DateTimeKind.Utc).AddTicks(3971)
+                            UpdatedAt = new DateTime(2026, 1, 16, 19, 51, 1, 103, DateTimeKind.Utc).AddTicks(9016)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 1, 19, 18, 16, 7, 546, DateTimeKind.Utc).AddTicks(3974),
+                            CreatedAt = new DateTime(2026, 1, 16, 19, 51, 1, 103, DateTimeKind.Utc).AddTicks(9019),
                             Name = "Ahri",
                             PrimaryRoleId = 3,
                             RiotChampionId = "103",
                             Title = "the Nine-Tailed Fox",
-                            UpdatedAt = new DateTime(2026, 1, 19, 18, 16, 7, 546, DateTimeKind.Utc).AddTicks(3975)
+                            UpdatedAt = new DateTime(2026, 1, 16, 19, 51, 1, 103, DateTimeKind.Utc).AddTicks(9020)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 1, 19, 18, 16, 7, 546, DateTimeKind.Utc).AddTicks(3977),
+                            CreatedAt = new DateTime(2026, 1, 16, 19, 51, 1, 103, DateTimeKind.Utc).AddTicks(9023),
                             Name = "Zed",
                             PrimaryRoleId = 3,
                             RiotChampionId = "238",
                             Title = "the Master of Shadows",
-                            UpdatedAt = new DateTime(2026, 1, 19, 18, 16, 7, 546, DateTimeKind.Utc).AddTicks(3978)
+                            UpdatedAt = new DateTime(2026, 1, 16, 19, 51, 1, 103, DateTimeKind.Utc).AddTicks(9023)
                         });
                 });
 
@@ -139,8 +142,8 @@ namespace MatchupCompanion.API.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("RiotItemId")
                         .HasColumnType("int");

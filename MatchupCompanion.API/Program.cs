@@ -58,6 +58,8 @@ builder.Services.AddScoped<IChampionRepository, ChampionRepository>();
 builder.Services.AddScoped<IMatchupRepository, MatchupRepository>();
 builder.Services.AddScoped<IMatchupTipRepository, MatchupTipRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRuneRepository, RuneRepository>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
 
 // Inyección de dependencias - Servicios
 builder.Services.AddScoped<IChampionService, ChampionService>();
@@ -94,23 +96,61 @@ app.UseAuthorization();
 // Mapear controllers
 app.MapControllers();
 
-// Opcional: Aplicar migraciones automáticamente al iniciar (solo en desarrollo)
-if (app.Environment.IsDevelopment())
+// Sincronización automática de datos de Riot al iniciar
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
+    var services = scope.ServiceProvider;
+    try
     {
-        var services = scope.ServiceProvider;
-        try
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        var riotApiService = services.GetRequiredService<RiotApiService>();
+
+        // Verificar si hay datos, si no, sincronizar
+        var hasChampions = await context.Champions.AnyAsync();
+        var hasRunes = await context.Runes.AnyAsync();
+        var hasItems = await context.Items.AnyAsync();
+
+        if (!hasChampions || !hasRunes || !hasItems)
         {
-            var context = services.GetRequiredService<ApplicationDbContext>();
-            // Descomentar la siguiente línea para aplicar migraciones automáticamente
-            // await context.Database.MigrateAsync();
-            app.Logger.LogInformation("Base de datos lista");
+            app.Logger.LogInformation("Sincronizando datos desde Riot Data Dragon (español)...");
+
+            // Usar español (es_ES) para todos los datos
+            const string language = "es_ES";
+
+            if (!hasChampions)
+            {
+                app.Logger.LogInformation("Sincronizando campeones...");
+                await riotApiService.SyncChampionsFromRiotAsync(language);
+            }
+
+            if (!hasRunes)
+            {
+                app.Logger.LogInformation("Sincronizando runas...");
+                await riotApiService.SyncRunesFromRiotAsync(language);
+            }
+
+            if (!hasItems)
+            {
+                app.Logger.LogInformation("Sincronizando items...");
+                await riotApiService.SyncItemsFromRiotAsync(language);
+            }
+
+            app.Logger.LogInformation("Sincronización completada");
         }
-        catch (Exception ex)
+        else
         {
-            app.Logger.LogError(ex, "Error al inicializar la base de datos");
+            app.Logger.LogInformation("Base de datos ya tiene datos de Riot");
         }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError("Error al sincronizar datos de Riot: {Message}", ex.Message);
+        app.Logger.LogError("Stack trace: {StackTrace}", ex.StackTrace);
+        if (ex.InnerException != null)
+        {
+            app.Logger.LogError("Inner exception: {InnerMessage}", ex.InnerException.Message);
+        }
+        app.Logger.LogWarning("La app continuará, puedes sincronizar manualmente desde Swagger: POST /api/RiotSync/sync-all");
     }
 }
 

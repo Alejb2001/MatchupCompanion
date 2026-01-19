@@ -18,6 +18,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Role> Roles { get; set; }
     public DbSet<Matchup> Matchups { get; set; }
     public DbSet<MatchupTip> MatchupTips { get; set; }
+    public DbSet<Rune> Runes { get; set; }
+    public DbSet<Item> Items { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,6 +80,23 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(mt => mt.Category);
             entity.HasIndex(mt => mt.Priority);
+        });
+
+        // Configuración de la entidad Rune
+        modelBuilder.Entity<Rune>(entity =>
+        {
+            entity.HasIndex(r => r.RiotRuneId).IsUnique();
+            entity.HasIndex(r => r.TreeId);
+            entity.HasIndex(r => r.SlotIndex);
+        });
+
+        // Configuración de la entidad Item
+        modelBuilder.Entity<Item>(entity =>
+        {
+            entity.HasIndex(i => i.RiotItemId).IsUnique();
+            entity.HasIndex(i => i.Name);
+            entity.HasIndex(i => i.IsCompleted);
+            entity.HasIndex(i => i.IsPurchasable);
         });
 
         // Seed data inicial

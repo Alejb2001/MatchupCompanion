@@ -13,6 +13,8 @@ public class RiotApiService
 {
     private readonly HttpClient _httpClient;
     private readonly IChampionRepository _championRepository;
+    private readonly IRuneRepository _runeRepository;
+    private readonly IItemRepository _itemRepository;
     private readonly ILogger<RiotApiService> _logger;
     private readonly string _apiKey;
 
@@ -24,10 +26,14 @@ public class RiotApiService
         HttpClient httpClient,
         IConfiguration configuration,
         IChampionRepository championRepository,
+        IRuneRepository runeRepository,
+        IItemRepository itemRepository,
         ILogger<RiotApiService> logger)
     {
         _httpClient = httpClient;
         _championRepository = championRepository;
+        _runeRepository = runeRepository;
+        _itemRepository = itemRepository;
         _logger = logger;
         _apiKey = configuration["RiotApi:ApiKey"] ?? string.Empty;
     }
@@ -143,6 +149,202 @@ public class RiotApiService
         };
     }
 
+    /// <summary>
+    /// Elimina tags HTML de un string
+    /// </summary>
+    private static string StripHtmlTags(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        // Usar regex para eliminar todos los tags HTML
+        return System.Text.RegularExpressions.Regex.Replace(input, "<[^>]*>", "").Trim();
+    }
+
+    /// <summary>
+    /// Sincroniza todas las runas desde Data Dragon
+    /// </summary>
+    public async Task<int> SyncRunesFromRiotAsync(string language = "en_US")
+    {
+        try
+        {
+            var version = await GetLatestVersionAsync();
+            var url = $"{DataDragonBaseUrl}/cdn/{version}/data/{language}/runesReforged.json";
+
+            _logger.LogInformation("Obteniendo runas desde {Url}", url);
+
+            var response = await _httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var runeTrees = JsonSerializer.Deserialize<List<RiotRuneTree>>(jsonString);
+
+            if (runeTrees == null || !runeTrees.Any())
+            {
+                _logger.LogWarning("No se encontraron datos de runas");
+                return 0;
+            }
+
+            int syncedCount = 0;
+
+            foreach (var tree in runeTrees)
+            {
+                int slotIndex = 0;
+                foreach (var slot in tree.Slots)
+                {
+                    foreach (var rune in slot.Runes)
+                    {
+                        var existingRune = await _runeRepository.GetByRiotIdAsync(rune.Id);
+
+                        if (existingRune == null)
+                        {
+                            var newRune = new Rune
+                            {
+                                RiotRuneId = rune.Id,
+                                Key = rune.Key,
+                                Name = rune.Name,
+                                IconPath = rune.Icon,
+                                TreeName = tree.Name,
+                                TreeId = tree.Id,
+                                SlotIndex = slotIndex,
+                                ShortDescription = rune.ShortDesc
+                            };
+
+                            await _runeRepository.CreateAsync(newRune);
+                            syncedCount++;
+                            _logger.LogDebug("Runa creada: {RuneName} ({TreeName})", newRune.Name, tree.Name);
+                        }
+                        else
+                        {
+                            existingRune.Key = rune.Key;
+                            existingRune.Name = rune.Name;
+                            existingRune.IconPath = rune.Icon;
+                            existingRune.TreeName = tree.Name;
+                            existingRune.TreeId = tree.Id;
+                            existingRune.SlotIndex = slotIndex;
+                            existingRune.ShortDescription = rune.ShortDesc;
+
+                            await _runeRepository.UpdateAsync(existingRune);
+                            syncedCount++;
+                        }
+                    }
+                    slotIndex++;
+                }
+            }
+
+            _logger.LogInformation("Sincronización de runas completada. {Count} runas sincronizadas", syncedCount);
+            return syncedCount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al sincronizar runas desde Riot API");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Sincroniza todos los items desde Data Dragon
+    /// </summary>
+    public async Task<int> SyncItemsFromRiotAsync(string language = "en_US")
+    {
+        try
+        {
+            var version = await GetLatestVersionAsync();
+            var url = $"{DataDragonBaseUrl}/cdn/{version}/data/{language}/item.json";
+
+            _logger.LogInformation("Obteniendo items desde {Url}", url);
+
+            var response = await _httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var itemData = JsonSerializer.Deserialize<RiotItemResponse>(jsonString);
+
+            if (itemData?.Data == null || !itemData.Data.Any())
+            {
+                _logger.LogWarning("No se encontraron datos de items");
+                return 0;
+            }
+
+            int syncedCount = 0;
+
+            foreach (var (itemId, item) in itemData.Data)
+            {
+                if (!int.TryParse(itemId, out int riotItemId))
+                    continue;
+
+                // Filtrar items que no son para Summoner's Rift (map 11)
+                if (item.Maps != null && item.Maps.TryGetValue("11", out bool isAvailable) && !isAvailable)
+                    continue;
+
+                var existingItem = await _itemRepository.GetByRiotIdAsync(riotItemId);
+
+                var tags = item.Tags != null ? JsonSerializer.Serialize(item.Tags) : null;
+                var buildsFrom = item.From != null ? string.Join(",", item.From) : null;
+                var buildsInto = item.Into != null ? string.Join(",", item.Into) : null;
+
+                // Limpiar HTML del nombre (algunos items tienen tags HTML en el nombre)
+                var cleanName = StripHtmlTags(item.Name);
+
+                if (existingItem == null)
+                {
+                    var newItem = new Item
+                    {
+                        RiotItemId = riotItemId,
+                        Name = cleanName,
+                        Description = item.Description,
+                        IconPath = $"{riotItemId}.png",
+                        TotalGold = item.Gold?.Total ?? 0,
+                        Tags = tags,
+                        IsPurchasable = item.Gold?.Purchasable ?? false,
+                        IsCompleted = (item.Depth ?? 1) >= 3,
+                        BuildsFrom = buildsFrom,
+                        BuildsInto = buildsInto
+                    };
+
+                    await _itemRepository.CreateAsync(newItem);
+                    syncedCount++;
+                    _logger.LogDebug("Item creado: {ItemName}", newItem.Name);
+                }
+                else
+                {
+                    existingItem.Name = cleanName;
+                    existingItem.Description = item.Description;
+                    existingItem.IconPath = $"{riotItemId}.png";
+                    existingItem.TotalGold = item.Gold?.Total ?? 0;
+                    existingItem.Tags = tags;
+                    existingItem.IsPurchasable = item.Gold?.Purchasable ?? false;
+                    existingItem.IsCompleted = (item.Depth ?? 1) >= 3;
+                    existingItem.BuildsFrom = buildsFrom;
+                    existingItem.BuildsInto = buildsInto;
+
+                    await _itemRepository.UpdateAsync(existingItem);
+                    syncedCount++;
+                }
+            }
+
+            _logger.LogInformation("Sincronización de items completada. {Count} items sincronizados", syncedCount);
+            return syncedCount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al sincronizar items desde Riot API");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Sincroniza todo: campeones, runas e items
+    /// </summary>
+    public async Task<(int champions, int runes, int items)> SyncAllFromRiotAsync(string language = "en_US")
+    {
+        var champions = await SyncChampionsFromRiotAsync(language);
+        var runes = await SyncRunesFromRiotAsync(language);
+        var items = await SyncItemsFromRiotAsync(language);
+
+        return (champions, runes, items);
+    }
+
     #region Clases de respuesta de la API de Riot (Data Dragon)
 
     private class RiotChampionResponse
@@ -212,6 +414,113 @@ public class RiotApiService
 
         [JsonPropertyName("h")]
         public int H { get; set; }
+    }
+
+    // ============================================
+    // Clases para Runas (runesReforged.json)
+    // ============================================
+
+    private class RiotRuneTree
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("key")]
+        public string Key { get; set; } = string.Empty;
+
+        [JsonPropertyName("icon")]
+        public string Icon { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("slots")]
+        public List<RiotRuneSlot> Slots { get; set; } = new();
+    }
+
+    private class RiotRuneSlot
+    {
+        [JsonPropertyName("runes")]
+        public List<RiotRune> Runes { get; set; } = new();
+    }
+
+    private class RiotRune
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("key")]
+        public string Key { get; set; } = string.Empty;
+
+        [JsonPropertyName("icon")]
+        public string Icon { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("shortDesc")]
+        public string ShortDesc { get; set; } = string.Empty;
+
+        [JsonPropertyName("longDesc")]
+        public string LongDesc { get; set; } = string.Empty;
+    }
+
+    // ============================================
+    // Clases para Items (item.json)
+    // ============================================
+
+    private class RiotItemResponse
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("version")]
+        public string Version { get; set; } = string.Empty;
+
+        [JsonPropertyName("data")]
+        public Dictionary<string, RiotItem> Data { get; set; } = new();
+    }
+
+    private class RiotItem
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [JsonPropertyName("gold")]
+        public RiotItemGold? Gold { get; set; }
+
+        [JsonPropertyName("tags")]
+        public List<string>? Tags { get; set; }
+
+        [JsonPropertyName("maps")]
+        public Dictionary<string, bool>? Maps { get; set; }
+
+        [JsonPropertyName("from")]
+        public List<string>? From { get; set; }
+
+        [JsonPropertyName("into")]
+        public List<string>? Into { get; set; }
+
+        [JsonPropertyName("depth")]
+        public int? Depth { get; set; }
+    }
+
+    private class RiotItemGold
+    {
+        [JsonPropertyName("base")]
+        public int Base { get; set; }
+
+        [JsonPropertyName("total")]
+        public int Total { get; set; }
+
+        [JsonPropertyName("sell")]
+        public int Sell { get; set; }
+
+        [JsonPropertyName("purchasable")]
+        public bool Purchasable { get; set; }
     }
 
     #endregion

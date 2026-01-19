@@ -1,37 +1,40 @@
 # Estado Actual del Proyecto - Matchup Companion
 
-**Última actualización**: 16 de Enero, 2026
+**Última actualización**: 19 de Enero, 2026
 **Desarrollador**: Alejandro Burciaga Calzadillas
 
 ---
 
-## 📊 Resumen Ejecutivo
+## Resumen Ejecutivo
 
-**Estado General**: ✅ Backend y Frontend funcionales y operativos
-**Versión**: 0.2.0 (Alpha)
-**Base de Datos**: Configurada y poblada con 172 campeones
-**Frontend**: Blazor WebAssembly completamente implementado
+**Estado General**: Backend y Frontend funcionales y operativos
+**Versión**: 0.3.0 (Alpha)
+**Base de Datos**: Configurada con 172 campeones, 200+ items y runas (en español)
+**Frontend**: Blazor WebAssembly con sistema de edición de matchups y autocompletado
 
 ---
 
-## ✅ Componentes Completados
+## Componentes Completados
 
 ### 1. Backend API (.NET 8)
 
 #### Infraestructura
-- ✅ ASP.NET Core Web API configurada
-- ✅ Entity Framework Core 8 implementado
-- ✅ SQL Server LocalDB configurado
-- ✅ Swagger UI habilitado (http://localhost:5007)
-- ✅ CORS configurado para desarrollo
-- ✅ Logging configurado
+- ASP.NET Core Web API configurada
+- Entity Framework Core 8 implementado
+- SQL Server LocalDB configurado
+- Swagger UI habilitado (http://localhost:5007)
+- CORS configurado para desarrollo (HTTP puerto 5007)
+- Logging configurado
+- Sincronización automática al iniciar
 
 #### Base de Datos
-- ✅ Migraciones creadas y aplicadas
-- ✅ 5 tablas: `Roles`, `Champions`, `Matchups`, `MatchupTips`, `__EFMigrationsHistory`
-- ✅ Relaciones entre tablas configuradas correctamente
-- ✅ 5 roles predefinidos (Top, Jungle, Mid, ADC, Support)
-- ✅ 172 campeones sincronizados desde Data Dragon
+- Migraciones creadas y aplicadas
+- 7 tablas: `Roles`, `Champions`, `Matchups`, `MatchupTips`, `Runes`, `Items`, `__EFMigrationsHistory`
+- Relaciones entre tablas configuradas correctamente
+- 5 roles predefinidos (Top, Jungle, Mid, ADC, Support)
+- 172 campeones sincronizados desde Data Dragon (español)
+- 200+ items sincronizados desde Data Dragon (español)
+- Runas sincronizadas desde Data Dragon (español)
 
 **Detalles de la BD**:
 ```
@@ -43,192 +46,218 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 #### Arquitectura Implementada
 
 **Patrón Repository**:
-- ✅ `IChampionRepository` / `ChampionRepository`
-- ✅ `IMatchupRepository` / `MatchupRepository`
-- ✅ `IMatchupTipRepository` / `MatchupTipRepository`
-- ✅ `IRoleRepository` / `RoleRepository`
+- `IChampionRepository` / `ChampionRepository`
+- `IMatchupRepository` / `MatchupRepository`
+- `IMatchupTipRepository` / `MatchupTipRepository`
+- `IRoleRepository` / `RoleRepository`
+- `IRuneRepository` / `RuneRepository`
+- `IItemRepository` / `ItemRepository`
 
 **Servicios de Negocio**:
-- ✅ `IChampionService` / `ChampionService`
-- ✅ `IMatchupService` / `MatchupService`
+- `IChampionService` / `ChampionService`
+- `IMatchupService` / `MatchupService`
 
 **Servicios Externos**:
-- ✅ `RiotApiService` - Sincronización con Data Dragon
+- `RiotApiService` - Sincronización con Data Dragon
   - Obtiene la versión más reciente de Data Dragon
-  - Sincroniza campeones automáticamente
+  - Sincroniza campeones automáticamente (es_ES)
+  - Sincroniza runas automáticamente (es_ES)
+  - Sincroniza items automáticamente (es_ES) con limpieza de HTML
   - Deserialización JSON con `[JsonPropertyName]` correctamente configurada
-  - Manejo de errores y logging
+  - Manejo de errores y logging detallado
 
 #### Controladores (Endpoints)
 
 **ChampionsController** (`/api/Champions`):
-- ✅ GET - Obtener todos los campeones
-- ✅ GET /{id} - Obtener campeón por ID
-- ✅ GET /riot/{riotId} - Obtener campeón por RiotChampionId
-- ✅ GET /role/{roleId} - Obtener campeones por rol
-- ✅ POST - Crear campeón
-- ✅ PUT /{id} - Actualizar campeón
-- ✅ DELETE /{id} - Eliminar campeón
+- GET - Obtener todos los campeones
+- GET /{id} - Obtener campeón por ID
+- GET /riot/{riotId} - Obtener campeón por RiotChampionId
+- GET /role/{roleId} - Obtener campeones por rol
+- POST - Crear campeón
+- PUT /{id} - Actualizar campeón
+- DELETE /{id} - Eliminar campeón
 
 **MatchupsController** (`/api/Matchups`):
-- ✅ GET - Obtener todos los matchups
-- ✅ GET /{id} - Obtener matchup por ID
-- ✅ GET /champion/{championId} - Matchups de un campeón
-- ✅ GET /specific - Matchup específico (playerChampionId, enemyChampionId)
-- ✅ POST - Crear matchup
-- ✅ PUT /{id} - Actualizar matchup
-- ✅ DELETE /{id} - Eliminar matchup
+- GET - Obtener todos los matchups
+- GET /{id} - Obtener matchup por ID
+- GET /champion/{championId} - Matchups de un campeón
+- GET /specific - Matchup específico (playerChampionId, enemyChampionId)
+- POST - Crear matchup
+- PUT /{id} - Actualizar matchup
+- DELETE /{id} - Eliminar matchup
 
 **MatchupTipsController** (`/api/MatchupTips`):
-- ✅ GET - Obtener todos los tips
-- ✅ GET /{id} - Obtener tip por ID
-- ✅ GET /matchup/{matchupId} - Tips de un matchup
-- ✅ GET /category/{category} - Tips por categoría
-- ✅ POST - Crear tip
-- ✅ PUT /{id} - Actualizar tip
-- ✅ DELETE /{id} - Eliminar tip
+- GET - Obtener todos los tips
+- GET /{id} - Obtener tip por ID
+- GET /matchup/{matchupId} - Tips de un matchup
+- GET /category/{category} - Tips por categoría
+- POST - Crear tip
+- PUT /{id} - Actualizar tip
+- DELETE /{id} - Eliminar tip
 
 **RolesController** (`/api/Roles`):
-- ✅ GET - Obtener todos los roles
-- ✅ GET /{id} - Obtener rol por ID
+- GET - Obtener todos los roles
+- GET /{id} - Obtener rol por ID
+
+**RunesController** (`/api/Runes`):
+- GET - Obtener todas las runas
+- GET /{id} - Obtener runa por ID
+
+**ItemsController** (`/api/Items`):
+- GET - Obtener todos los items
+- GET /{id} - Obtener item por ID
 
 **RiotSyncController** (`/api/RiotSync`):
-- ✅ POST /sync-champions - Sincronizar campeones desde Data Dragon
-- ✅ GET /version - Obtener versión actual de Data Dragon
+- POST /sync-champions - Sincronizar campeones desde Data Dragon
+- POST /sync-runes - Sincronizar runas desde Data Dragon
+- POST /sync-items - Sincronizar items desde Data Dragon
+- POST /sync-all - Sincronizar todo (campeones, runas, items)
+- GET /version - Obtener versión actual de Data Dragon
 
 #### Modelos de Datos
 
 **Entidades**:
-- ✅ `Champion` - Campeones de LoL
-- ✅ `Role` - Roles/Líneas (Top, Jungle, Mid, ADC, Support)
-- ✅ `Matchup` - Enfrentamiento entre dos campeones
-- ✅ `MatchupTip` - Consejos específicos para un matchup
+- `Champion` - Campeones de LoL
+- `Role` - Roles/Líneas (Top, Jungle, Mid, ADC, Support)
+- `Matchup` - Enfrentamiento entre dos campeones (con campos de estrategia, items y runas)
+- `MatchupTip` - Consejos específicos para un matchup
+- `Rune` - Runas de LoL (sincronizadas desde Data Dragon)
+- `Item` - Items de LoL (sincronizados desde Data Dragon)
 
 **DTOs**:
-- ✅ `ChampionDto`, `CreateChampionDto`, `UpdateChampionDto`
-- ✅ `MatchupDto`, `CreateMatchupDto`, `UpdateMatchupDto`
-- ✅ `MatchupTipDto`, `CreateMatchupTipDto`, `UpdateMatchupTipDto`
-- ✅ `RoleDto`
+- `ChampionDto`, `CreateChampionDto`, `UpdateChampionDto`
+- `MatchupDto`, `CreateMatchupDto`, `UpdateMatchupDto` (incluye campos para items y runas)
+- `MatchupTipDto`, `CreateMatchupTipDto`, `UpdateMatchupTipDto`
+- `RoleDto`
+- `RuneDto`
+- `ItemDto`
 
 ---
 
 ### 2. Frontend (Blazor WebAssembly)
 
 #### Infraestructura
-- ✅ Blazor WebAssembly configurado
-- ✅ HttpClient con base URL configurada (https://localhost:7285)
-- ✅ Inyección de dependencias configurada
-- ✅ Bootstrap 5 integrado
-- ✅ Navegación con NavMenu
+- Blazor WebAssembly configurado
+- HttpClient con base URL configurada (http://localhost:5007)
+- Inyección de dependencias configurada
+- Bootstrap 5 integrado
+- Navegación con NavMenu
 
 #### Servicios HTTP
-- ✅ `IChampionService` / `ChampionService` - Comunicación con API de campeones
-- ✅ `IRoleService` / `RoleService` - Comunicación con API de roles
-- ✅ `IMatchupService` / `MatchupService` - Comunicación con API de matchups
+- `IChampionService` / `ChampionService` - Comunicación con API de campeones
+- `IRoleService` / `RoleService` - Comunicación con API de roles
+- `IMatchupService` / `MatchupService` - Comunicación con API de matchups
+- `IRuneService` / `RuneService` - Comunicación con API de runas
+- `IItemService` / `ItemService` - Comunicación con API de items
 
 **Métodos implementados**:
 - GetAllChampionsAsync(), GetChampionByIdAsync(int id), GetChampionsByRoleAsync(int roleId)
 - GetAllRolesAsync(), GetRoleByIdAsync(int id)
 - GetAllMatchupsAsync(), GetMatchupByIdAsync(int id), GetMatchupsByChampionAsync(int championId)
 - GetSpecificMatchupAsync(int playerChampionId, int enemyChampionId)
-- CreateMatchupAsync(CreateMatchupDto dto), CreateMatchupTipAsync(CreateMatchupTipDto dto)
+- CreateMatchupAsync(CreateMatchupDto dto), UpdateMatchupAsync(UpdateMatchupDto dto)
+- CreateMatchupTipAsync(CreateMatchupTipDto dto)
+- GetAllRunesAsync(), GetAllItemsAsync()
 
 #### Páginas Implementadas
 
 **Home.razor**:
-- ✅ Página de bienvenida con descripción del proyecto
-- ✅ Enlaces a las funcionalidades principales
+- Página de bienvenida con descripción del proyecto
+- Enlaces a las funcionalidades principales
 
 **MatchupSearch.razor** (`/matchup-search`):
-- ✅ Selección de campeón jugador
-- ✅ Selección de campeón enemigo
-- ✅ Búsqueda de matchup específico
-- ✅ Navegación a detalles del matchup si existe
-- ✅ Redirección a creación si no existe
+- Selección de campeón jugador
+- Selección de campeón enemigo
+- Búsqueda de matchup específico
+- Navegación a detalles del matchup si existe
+- Redirección a creación si no existe
 
 **MatchupsList.razor** (`/matchups`):
-- ✅ Lista completa de matchups
-- ✅ Filtrado dinámico por nombre de campeón
-- ✅ Visualización de dificultad
-- ✅ Enlaces a detalles de cada matchup
+- Lista completa de matchups
+- Filtrado dinámico por nombre de campeón
+- Visualización de dificultad
+- Enlaces a detalles de cada matchup
 
 **MatchupDetail.razor** (`/matchup-detail/{id}`):
-- ✅ Información detallada del matchup
-- ✅ Visualización de campeones y rol
-- ✅ Lista de tips organizados
-- ✅ Navegación a agregar tips
+- Información detallada del matchup
+- Visualización de campeones y rol
+- Lista de tips organizados
+- Navegación a agregar tips
 
 **CreateMatchup.razor** (`/create-matchup`):
-- ✅ Formulario para crear nuevo matchup
-- ✅ Selección de campeón jugador
-- ✅ Selección de campeón enemigo
-- ✅ Selección de rol
-- ✅ Selección de dificultad
-- ✅ Campo de consejos generales
-- ✅ Validación de formulario
-- ✅ Redirección después de crear
+- Formulario para crear nuevo matchup
+- Selección de campeón jugador
+- Selección de campeón enemigo
+- Selección de rol
+- Selección de dificultad
+- Campo de consejos generales
+- Validación de formulario
+- Redirección después de crear
+
+**EditMatchup.razor** (`/edit-matchup/{id}`):
+- Formulario para editar matchup existente
+- **Búsqueda con autocompletado** para campeones (campos de texto con filtrado en tiempo real)
+- **Búsqueda con autocompletado** para items
+- Selección de items por categoría (Iniciales, Core, Situacionales) con botones
+- Badges mostrando items seleccionados con opción de eliminar
+- Dropdown para rol (solo 5 opciones)
+- Campo de notas de estrategia
+- Validación de formulario
 
 **AddTip.razor** (`/add-tip/{matchupId}`):
-- ✅ Formulario para agregar tip a matchup
-- ✅ Selección de categoría (Early Game, Mid Game, Late Game, Items, Runes, General)
-- ✅ Campo de descripción del tip
-- ✅ Selección de prioridad (1-5)
-- ✅ Validación de formulario
-- ✅ Redirección a detalles del matchup después de agregar
+- Formulario para agregar tip a matchup
+- Selección de categoría (Early Game, Mid Game, Late Game, Items, Runes, General)
+- Campo de descripción del tip
+- Selección de prioridad (1-5)
+- Validación de formulario
+- Redirección a detalles del matchup después de agregar
 
 #### Modelos Compartidos (MatchupCompanion.Shared)
 
 **DTOs implementados**:
-- ✅ `ChampionDto` - Representación de campeón
-- ✅ `RoleDto` - Representación de rol
-- ✅ `MatchupDto` - Representación de matchup con navegación
-- ✅ `MatchupTipDto` - Representación de tip
-- ✅ `CreateMatchupDto` - DTO para crear matchup
-- ✅ `CreateMatchupTipDto` - DTO para crear tip
+- `ChampionDto` - Representación de campeón
+- `RoleDto` - Representación de rol
+- `MatchupDto` - Representación de matchup con navegación, items y runas
+- `MatchupTipDto` - Representación de tip
+- `CreateMatchupDto` - DTO para crear matchup
+- `UpdateMatchupDto` - DTO para actualizar matchup (incluye items y runas)
+- `CreateMatchupTipDto` - DTO para crear tip
+- `RuneDto` - Representación de runa
+- `ItemDto` - Representación de item
 
 ---
 
-## 🚧 Componentes Pendientes
+## Componentes Pendientes
 
 ### Funcionalidades Adicionales
-- ❌ Autenticación y autorización (ASP.NET Core Identity)
-- ❌ Sistema de votación para tips
-- ❌ Caching (Redis o in-memory)
-- ❌ Tests unitarios
-- ❌ Tests de integración
-- ❌ Documentación XML completa
-- ❌ CI/CD pipeline
-- ❌ Deployment a producción
+- Autenticación y autorización (ASP.NET Core Identity)
+- Sistema de votación para tips
+- Caching (Redis o in-memory)
+- Tests unitarios
+- Tests de integración
+- CI/CD pipeline
+- Deployment a producción
 
 ---
 
-## 🔐 Seguridad
+## Seguridad
 
-### Configuración de API Keys
+### Configuración
 
-**Estado**: ✅ Configurado correctamente
+**Estado**: Configurado correctamente
 
-La API key de Riot Games está almacenada en:
-- `appsettings.Development.json` (NO versionado en Git)
-
-Archivo de ejemplo creado:
-- `appsettings.Development.json.example` (versionado, sin keys reales)
+**Nota**: La sincronización con Data Dragon **no requiere API key**. Los datos se obtienen del CDN público de Riot Games.
 
 **Configuración de .gitignore**:
 ```
-# Archivos con API keys NO se suben a Git
+# Archivos de configuración local NO se suben a Git
 **/appsettings.*.json
 !**/appsettings.json
 ```
 
-**⚠️ IMPORTANTE**:
-- Nunca commitear `appsettings.Development.json`
-- Usar el archivo `.example` como plantilla
-- Rotar las API keys periódicamente
-
 ---
 
-## 🔍 Cómo Usar el Sistema Actual
+## Cómo Usar el Sistema Actual
 
 ### 1. Iniciar la API
 ```bash
@@ -279,9 +308,16 @@ POST /api/MatchupTips
 }
 ```
 
-**Resincronizar campeones**:
+**Resincronizar datos** (español):
 ```
-POST /api/RiotSync/sync-champions?language=en_US
+POST /api/RiotSync/sync-all?language=es_ES
+```
+
+**Resincronizar individualmente**:
+```
+POST /api/RiotSync/sync-champions?language=es_ES
+POST /api/RiotSync/sync-runes?language=es_ES
+POST /api/RiotSync/sync-items?language=es_ES
 ```
 
 ### 4. Consultas SQL Útiles
@@ -311,7 +347,7 @@ JOIN Roles r ON m.RoleId = r.Id;
 
 ---
 
-## 📝 Notas Técnicas
+## Notas Técnicas
 
 ### Problemas Resueltos Recientemente
 
@@ -320,20 +356,25 @@ JOIN Roles r ON m.RoleId = r.Id;
    - Solución: Agregar atributos `[JsonPropertyName]` a todas las clases de deserialización
    - Resultado: 172 campeones sincronizados exitosamente
 
-2. **Contador de Sincronización** (16/01/2026)
-   - Problema: Solo contaba creaciones, no actualizaciones
-   - Solución: Incrementar `syncedCount` también en el bloque de actualización
-   - Ubicación: `RiotApiService.cs:114`
+2. **Truncamiento de nombres de items** (19/01/2026)
+   - Problema: "String or binary data would be truncated" en columna Name de Items
+   - Solución: Aumentar MaxLength de 100 a 300 y añadir función StripHtmlTags()
+   - Ubicación: `Item.cs`, `RiotApiService.cs`
 
-3. **Swagger No Accesible** (16/01/2026)
-   - Problema: Solo funcionaba en modo Development
-   - Solución: Remover la restricción `if (app.Environment.IsDevelopment())`
-   - Ubicación: `Program.cs:79-84`
+3. **CORS con HTTPS** (19/01/2026)
+   - Problema: Error CORS con status code null (problema de certificado SSL)
+   - Solución: Usar HTTP en lugar de HTTPS para desarrollo local (puerto 5007)
+   - Ubicación: `MatchupCompanion.Client/Program.cs`
 
-4. **Variable Duplicada en MatchupsList** (16/01/2026)
-   - Problema: `error CS0102: El tipo 'MatchupsList' ya contiene una definición para 'filterText'`
-   - Solución: Remover declaración simple en línea 99, mantener propiedad con backing field
-   - Ubicación: `MatchupsList.razor:99`
+4. **Comillas escapadas en Razor** (19/01/2026)
+   - Problema: Error de compilación con `\"` en atributos onclick
+   - Solución: Usar sintaxis `@(() => Method("string"))` en lugar de comillas escapadas
+   - Ubicación: `EditMatchup.razor`
+
+5. **Datos en inglés** (19/01/2026)
+   - Problema: Campeones, runas e items se mostraban en inglés
+   - Solución: Configurar sincronización automática con `language = "es_ES"` en Program.cs
+   - Ubicación: `Program.cs` (auto-sync al iniciar)
 
 ### Configuración de Puertos
 
@@ -349,30 +390,27 @@ La API usa automáticamente la versión más reciente de Data Dragon.
 
 ---
 
-## 🎯 Próximos Pasos Recomendados
+## Próximos Pasos Recomendados
 
-### Corto Plazo (1-2 semanas)
+### Corto Plazo
 1. Implementar tests unitarios para servicios y repositorios
 2. Agregar validaciones más robustas en DTOs
 3. Implementar paginación en endpoints GET
-4. Agregar imágenes de campeones desde Data Dragon
-5. Mejorar UI/UX del frontend
+4. Mostrar imágenes de campeones en la interfaz
 
-### Mediano Plazo (1 mes)
+### Mediano Plazo
 1. Implementar autenticación básica con ASP.NET Core Identity
 2. Agregar caching para mejorar rendimiento
-3. Crear más seed data para testing
-4. Implementar edición y eliminación de matchups y tips
+3. Sistema de votación para tips
 
-### Largo Plazo (2-3 meses)
-1. Sistema de votación para tips
-2. Estadísticas y analytics
-3. Deployment a Azure/AWS
-4. Integración con más APIs de Riot (match history, win rates)
+### Largo Plazo
+1. Estadísticas y analytics
+2. Deployment a Azure/AWS
+3. Integración con más APIs de Riot (match history, win rates)
 
 ---
 
-## 📞 Contacto y Soporte
+## Contacto y Soporte
 
 **Desarrollador**: Alejandro Burciaga Calzadillas
 
@@ -380,4 +418,4 @@ Para reportar problemas o sugerencias, crear un issue en el repositorio.
 
 ---
 
-**Última revisión**: 16 de Enero, 2026
+**Última revisión**: 19 de Enero, 2026

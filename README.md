@@ -2,9 +2,7 @@
 
 Aplicación web full-stack construida con .NET 8 que permite a los jugadores de League of Legends buscar, crear y compartir estrategias para matchups de campeones.
 
-Este proyecto demuestra competencia en el ecosistema .NET, incluyendo ASP.NET Core Web API, Blazor WebAssembly y Entity Framework Core.
-
-**Estado**: Backend y frontend completamente funcionales. Base de datos configurada con 172 campeones sincronizados desde Riot Games Data Dragon.
+**Estado**: Backend y frontend completamente funcionales. Base de datos configurada con 172 campeones, 200+ items y runas sincronizados desde Riot Games Data Dragon en español.
 
 ## Descripción del Proyecto
 
@@ -13,6 +11,8 @@ Esta aplicación web resuelve un problema común para los jugadores de League of
 1. Seleccionar dos campeones (tu campeón y el campeón enemigo)
 2. Ver consejos, niveles de dificultad y estrategias enviadas por otros usuarios para ese matchup específico
 3. Contribuir agregando sus propios consejos para matchups
+4. Configurar builds recomendados con items iniciales, core y situacionales
+5. Seleccionar runas recomendadas para cada matchup
 
 La aplicación cuenta con un frontend reactivo en Blazor WebAssembly que consume una API backend de ASP.NET Core.
 
@@ -25,7 +25,8 @@ Este proyecto usa una estructura de repositorio monolítico con una aplicación 
 - Entity Framework Core 8 - ORM y comunicación con base de datos
 - SQL Server LocalDB - Motor de base de datos (desarrollo)
 - Swagger/OpenAPI - Documentación interactiva de la API
-- Integración con Data Dragon - Sincronización automática de campeones desde la API de Riot Games
+- Integración con Data Dragon - Sincronización automática de campeones, runas e items desde Riot Games
+- Soporte multiidioma (datos sincronizados en español es_ES)
 
 **Frontend (MatchupCompanion.Client)**
 - Blazor WebAssembly - SPA interactiva que se ejecuta en el navegador
@@ -38,8 +39,10 @@ Este proyecto usa una estructura de repositorio monolítico con una aplicación 
 ## Características
 
 **Backend API**
-- API RESTful completa con operaciones CRUD para Campeones, Matchups, Tips y Roles
-- 172 campeones sincronizados automáticamente desde Data Dragon
+- API RESTful completa con operaciones CRUD para Campeones, Matchups, Tips, Roles, Runas e Items
+- 172 campeones, 200+ items y runas sincronizados automáticamente desde Data Dragon
+- Sincronización automática al iniciar si la BD está vacía
+- Datos en español (es_ES) desde Data Dragon
 - Documentación interactiva con Swagger
 - Arquitectura de patrón Repository con capa de servicios
 - Entity Framework Core con SQL Server LocalDB
@@ -47,9 +50,11 @@ Este proyecto usa una estructura de repositorio monolítico con una aplicación 
 **Frontend**
 - Interfaz de usuario completa con Bootstrap 5
 - Búsqueda de matchups con selección de campeones y roles
+- **Campos de búsqueda con autocompletado** para campeones e items
+- Sistema de selección de items por categoría (Iniciales, Core, Situacionales)
 - Lista de matchups con filtrado dinámico
 - Vista detallada de matchup con tips categorizados
-- Formularios para crear matchups y agregar tips
+- Formularios para crear y editar matchups
 - Servicios HTTP para comunicación con API
 - Diseño responsivo para móvil y escritorio
 
@@ -68,37 +73,30 @@ Este proyecto usa una estructura de repositorio monolítico con una aplicación 
    cd MatchupCompanion
    ```
 
-2. Configurar API Key de Riot (opcional, solo para sincronización)
-   - Copiar `appsettings.Development.json.example` a `appsettings.Development.json`
-   - Obtener una API key en https://developer.riotgames.com/
-   - Reemplazar `YOUR_RIOT_API_KEY_HERE` con tu key
-   - Este archivo NO debe ser commiteado a Git
-
-3. Aplicar migraciones (si es necesario)
+2. Aplicar migraciones (si es necesario)
    ```bash
    cd MatchupCompanion.API
    dotnet ef database update
    ```
 
-4. Ejecutar el backend API
+3. Ejecutar el backend API
    ```bash
    cd MatchupCompanion.API
    dotnet run
    ```
-   - La API estará disponible en https://localhost:7285
-   - Swagger UI en https://localhost:7285
+   - La API estará disponible en http://localhost:5007
+   - Swagger UI en http://localhost:5007
+   - **Sincronización automática**: Al iniciar, si la BD está vacía, se sincronizan automáticamente campeones, runas e items en español
 
-5. Sincronizar campeones (si la base de datos está vacía)
-   - En Swagger, ejecutar `POST /api/RiotSync/sync-champions`
-   - Esto descargará ~172 campeones actuales de League of Legends
-
-6. Ejecutar el frontend (en otra terminal)
+4. Ejecutar el frontend (en otra terminal)
    ```bash
    cd MatchupCompanion.Client
    dotnet run
    ```
-   - El cliente estará disponible en el puerto mostrado en consola (usualmente https://localhost:5001)
-   - La API debe estar ejecutándose en https://localhost:7285
+   - El cliente estará disponible en el puerto mostrado en consola
+   - La API debe estar ejecutándose en http://localhost:5007
+
+**Nota**: La sincronización con Data Dragon no requiere API key. Los datos se obtienen del CDN público de Riot Games.
 
 ## Estructura del Proyecto
 
@@ -108,17 +106,18 @@ MatchupCompanion/
 │   ├── Controllers/                # Endpoints de la API
 │   ├── Services/                   # Lógica de negocio
 │   ├── Data/                       # DbContext y Repositorios
-│   ├── Models/                     # Entidades y DTOs
-│   ├── ExternalServices/           # RiotApiService (Data Dragon)
+│   ├── Models/                     # Entidades (Champion, Matchup, Rune, Item)
+│   ├── ExternalServices/           # RiotApiService (Data Dragon sync)
 │   └── Migrations/                 # Migraciones de EF Core
 ├── MatchupCompanion.Client/        # Frontend Blazor WebAssembly
-│   ├── Pages/                      # Páginas Razor
+│   ├── Pages/                      # Páginas Razor (incluyendo EditMatchup)
 │   ├── Services/                   # Servicios HTTP
 │   └── Layout/                     # Componentes de layout
 ├── MatchupCompanion.Shared/        # DTOs compartidos
-│   └── Models/                     # Objetos de transferencia de datos
+│   └── Models/                     # DTOs incluyendo RuneDto, ItemDto
 ├── ARCHITECTURE.md                 # Documentación de arquitectura
-└── PROJECT-STATUS.md               # Estado actual del proyecto
+├── PROJECT-STATUS.md               # Estado actual del proyecto
+└── FRONTEND-GUIDE.md               # Guía del frontend
 ```
 
 ## Mejoras Futuras
@@ -126,8 +125,7 @@ MatchupCompanion/
 - Autenticación de usuarios con ASP.NET Core Identity
 - Sistema de votación para tips
 - Estadísticas avanzadas y win rates
-- Funcionalidad de edición y eliminación para matchups y tips
-- Imágenes de campeones desde Data Dragon
+- Imágenes de campeones en la interfaz
 - Caching para optimización de rendimiento
 - Tests unitarios y de integración
 
@@ -135,8 +133,7 @@ MatchupCompanion/
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Detalles de arquitectura y patrones
 - [PROJECT-STATUS.md](PROJECT-STATUS.md) - Estado actual y próximos pasos
-
-> **Estado Actual**: Backend funcional con sincronización de campeones desde Data Dragon de Riot Games. Base de datos SQL Server LocalDB configurada con 172 campeones sincronizados.
+- [FRONTEND-GUIDE.md](FRONTEND-GUIDE.md) - Guía del frontend Blazor
 
 ---
 
