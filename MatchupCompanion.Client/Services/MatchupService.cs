@@ -86,4 +86,33 @@ public class MatchupService : IMatchupService
             throw;
         }
     }
+
+    public async Task<MatchupDto?> UpdateMatchupAsync(int id, UpdateMatchupDto matchup)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"api/Matchups/{id}", matchup);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<MatchupDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al actualizar matchup: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<MatchupDto?> FindOrCreateMatchupAsync(int playerChampionId, int enemyChampionId, int roleId)
+    {
+        try
+        {
+            var url = $"api/Matchups/find-or-create?playerChampionId={playerChampionId}&enemyChampionId={enemyChampionId}&roleId={roleId}";
+            return await _httpClient.GetFromJsonAsync<MatchupDto>(url);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al buscar/crear matchup: {ex.Message}");
+            throw;
+        }
+    }
 }

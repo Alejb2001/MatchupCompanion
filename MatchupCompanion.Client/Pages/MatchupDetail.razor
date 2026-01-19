@@ -2,6 +2,8 @@
 @using MatchupCompanion.Shared.Models
 @using MatchupCompanion.Client.Services
 @inject IMatchupService MatchupService
+@inject IRuneService RuneService
+@inject IItemService ItemService
 @inject NavigationManager Navigation
 
 <PageTitle>Detalles del Matchup</PageTitle>
@@ -33,9 +35,12 @@
     else
     {
         <div class="row">
-            <div class="col-lg-12">
+            <div class="col-lg-12 d-flex justify-content-between">
                 <button class="btn btn-secondary mb-3" @onclick="GoBack">
                     Volver
+                </button>
+                <button class="btn btn-primary mb-3" @onclick="NavigateToEdit">
+                    <i class="bi bi-pencil"></i> Editar Matchup
                 </button>
             </div>
         </div>
@@ -94,6 +99,154 @@
                 </div>
             </div>
         </div>
+
+        @* Sección de Runas *@
+        @if (matchup.KeystoneId.HasValue || matchup.SecondaryTreeId.HasValue)
+        {
+            <div class="row mb-4">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h4 class="mb-0">Runas Recomendadas</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                @* Runas Primarias *@
+                                <div class="col-md-6">
+                                    <h5>Árbol Primario</h5>
+                                    @if (primaryTree != null)
+                                    {
+                                        <p class="text-muted mb-2">@primaryTree.TreeName</p>
+                                    }
+                                    <ul class="list-unstyled">
+                                        @if (keystoneRune != null)
+                                        {
+                                            <li class="mb-2">
+                                                <strong>Keystone:</strong> @keystoneRune.Name
+                                                @if (!string.IsNullOrEmpty(keystoneRune.ShortDescription))
+                                                {
+                                                    <small class="text-muted d-block">@keystoneRune.ShortDescription</small>
+                                                }
+                                            </li>
+                                        }
+                                        @if (primaryRune1 != null)
+                                        {
+                                            <li class="mb-1">• @primaryRune1.Name</li>
+                                        }
+                                        @if (primaryRune2 != null)
+                                        {
+                                            <li class="mb-1">• @primaryRune2.Name</li>
+                                        }
+                                        @if (primaryRune3 != null)
+                                        {
+                                            <li class="mb-1">• @primaryRune3.Name</li>
+                                        }
+                                    </ul>
+                                </div>
+                                @* Runas Secundarias *@
+                                <div class="col-md-6">
+                                    <h5>Árbol Secundario</h5>
+                                    @if (secondaryTree != null)
+                                    {
+                                        <p class="text-muted mb-2">@secondaryTree.TreeName</p>
+                                    }
+                                    <ul class="list-unstyled">
+                                        @if (secondaryRune1 != null)
+                                        {
+                                            <li class="mb-1">• @secondaryRune1.Name</li>
+                                        }
+                                        @if (secondaryRune2 != null)
+                                        {
+                                            <li class="mb-1">• @secondaryRune2.Name</li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(matchup.StatShards))
+                            {
+                                <hr />
+                                <p><strong>Stat Shards:</strong> @matchup.StatShards</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* Sección de Items *@
+        @if (!string.IsNullOrEmpty(matchup.StartingItems) || !string.IsNullOrEmpty(matchup.CoreItems) || !string.IsNullOrEmpty(matchup.SituationalItems))
+        {
+            <div class="row mb-4">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h4 class="mb-0">Items Recomendados</h4>
+                        </div>
+                        <div class="card-body">
+                            @if (startingItems.Any())
+                            {
+                                <div class="mb-3">
+                                    <h5>Items Iniciales</h5>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var item in startingItems)
+                                        {
+                                            <span class="badge bg-secondary p-2">
+                                                @item.Name (@item.TotalGold g)
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (coreItems.Any())
+                            {
+                                <div class="mb-3">
+                                    <h5>Items Core</h5>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var item in coreItems)
+                                        {
+                                            <span class="badge bg-primary p-2">
+                                                @item.Name (@item.TotalGold g)
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (situationalItems.Any())
+                            {
+                                <div class="mb-3">
+                                    <h5>Items Situacionales</h5>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var item in situationalItems)
+                                        {
+                                            <span class="badge bg-info p-2">
+                                                @item.Name (@item.TotalGold g)
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* Sección de Estrategia *@
+        @if (!string.IsNullOrEmpty(matchup.Strategy))
+        {
+            <div class="row mb-4">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h4 class="mb-0">Estrategia</h4>
+                        </div>
+                        <div class="card-body">
+                            <pre style="white-space: pre-wrap; font-family: inherit;">@matchup.Strategy</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
 
         <div class="row">
             <div class="col-lg-12">
@@ -185,6 +338,22 @@
     private bool isLoading = true;
     private string? errorMessage;
 
+    // Runes data
+    private List<RuneTreeDto> runeTrees = new();
+    private RuneTreeDto? primaryTree;
+    private RuneTreeDto? secondaryTree;
+    private RuneDto? keystoneRune;
+    private RuneDto? primaryRune1;
+    private RuneDto? primaryRune2;
+    private RuneDto? primaryRune3;
+    private RuneDto? secondaryRune1;
+    private RuneDto? secondaryRune2;
+
+    // Items data
+    private List<ItemDto> startingItems = new();
+    private List<ItemDto> coreItems = new();
+    private List<ItemDto> situationalItems = new();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadMatchup();
@@ -198,6 +367,12 @@
         try
         {
             matchup = await MatchupService.GetMatchupByIdAsync(Id);
+
+            if (matchup != null)
+            {
+                await LoadRunesData();
+                await LoadItemsData();
+            }
         }
         catch (Exception ex)
         {
@@ -206,6 +381,88 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task LoadRunesData()
+    {
+        if (matchup == null) return;
+
+        try
+        {
+            runeTrees = await RuneService.GetRuneTreesAsync();
+            var allRunes = await RuneService.GetAllRunesAsync();
+
+            if (matchup.PrimaryTreeId.HasValue)
+            {
+                primaryTree = runeTrees.FirstOrDefault(t => t.TreeId == matchup.PrimaryTreeId);
+            }
+
+            if (matchup.SecondaryTreeId.HasValue)
+            {
+                secondaryTree = runeTrees.FirstOrDefault(t => t.TreeId == matchup.SecondaryTreeId);
+            }
+
+            if (matchup.KeystoneId.HasValue)
+            {
+                keystoneRune = allRunes.FirstOrDefault(r => r.RiotRuneId == matchup.KeystoneId);
+            }
+
+            if (matchup.PrimaryRune1Id.HasValue)
+            {
+                primaryRune1 = allRunes.FirstOrDefault(r => r.RiotRuneId == matchup.PrimaryRune1Id);
+            }
+
+            if (matchup.PrimaryRune2Id.HasValue)
+            {
+                primaryRune2 = allRunes.FirstOrDefault(r => r.RiotRuneId == matchup.PrimaryRune2Id);
+            }
+
+            if (matchup.PrimaryRune3Id.HasValue)
+            {
+                primaryRune3 = allRunes.FirstOrDefault(r => r.RiotRuneId == matchup.PrimaryRune3Id);
+            }
+
+            if (matchup.SecondaryRune1Id.HasValue)
+            {
+                secondaryRune1 = allRunes.FirstOrDefault(r => r.RiotRuneId == matchup.SecondaryRune1Id);
+            }
+
+            if (matchup.SecondaryRune2Id.HasValue)
+            {
+                secondaryRune2 = allRunes.FirstOrDefault(r => r.RiotRuneId == matchup.SecondaryRune2Id);
+            }
+        }
+        catch
+        {
+            // Silently fail - runes are optional display
+        }
+    }
+
+    private async Task LoadItemsData()
+    {
+        if (matchup == null) return;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(matchup.StartingItems))
+            {
+                startingItems = await ItemService.GetItemsByRiotIdsAsync(matchup.StartingItems);
+            }
+
+            if (!string.IsNullOrEmpty(matchup.CoreItems))
+            {
+                coreItems = await ItemService.GetItemsByRiotIdsAsync(matchup.CoreItems);
+            }
+
+            if (!string.IsNullOrEmpty(matchup.SituationalItems))
+            {
+                situationalItems = await ItemService.GetItemsByRiotIdsAsync(matchup.SituationalItems);
+            }
+        }
+        catch
+        {
+            // Silently fail - items are optional display
         }
     }
 
@@ -254,5 +511,10 @@
     private void NavigateToAddTip()
     {
         Navigation.NavigateTo($"/add-tip/{Id}");
+    }
+
+    private void NavigateToEdit()
+    {
+        Navigation.NavigateTo($"/edit-matchup/{Id}");
     }
 }
