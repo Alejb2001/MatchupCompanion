@@ -1,6 +1,8 @@
 using MatchupCompanion.API.Models.DTOs;
 using MatchupCompanion.API.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace MatchupCompanion.API.Controllers;
 
@@ -108,22 +110,35 @@ public class MatchupsController : ControllerBase
     }
 
     /// <summary>
-    /// Crea un nuevo matchup
+    /// Crea un nuevo matchup (requiere autenticación)
     /// </summary>
     /// <param name="request">Datos del matchup a crear</param>
     /// <returns>Matchup creado</returns>
     /// <response code="201">Retorna el matchup creado</response>
     /// <response code="400">Si los datos son inválidos</response>
+    /// <response code="401">Si el usuario no está autenticado</response>
+    /// <response code="403">Si el usuario es invitado</response>
     /// <response code="409">Si el matchup ya existe</response>
+    [Authorize]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateMatchup([FromBody] CreateMatchupRequest request)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
+        }
+
+        // Verificar que el usuario no sea invitado
+        var isGuest = User.FindFirst("IsGuest")?.Value == "True";
+        if (isGuest)
+        {
+            _logger.LogWarning("Usuario invitado intentó crear un matchup");
+            return Forbid();
         }
 
         try
@@ -147,22 +162,35 @@ public class MatchupsController : ControllerBase
     }
 
     /// <summary>
-    /// Agrega un consejo a un matchup existente
+    /// Agrega un consejo a un matchup existente (requiere autenticación)
     /// </summary>
     /// <param name="request">Datos del consejo a agregar</param>
     /// <returns>Matchup actualizado con el nuevo consejo</returns>
     /// <response code="200">Retorna el matchup actualizado</response>
     /// <response code="400">Si los datos son inválidos</response>
+    /// <response code="401">Si el usuario no está autenticado</response>
+    /// <response code="403">Si el usuario es invitado</response>
     /// <response code="404">Si el matchup no existe</response>
+    [Authorize]
     [HttpPost("tips")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddTipToMatchup([FromBody] CreateMatchupTipRequest request)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
+        }
+
+        // Verificar que el usuario no sea invitado
+        var isGuest = User.FindFirst("IsGuest")?.Value == "True";
+        if (isGuest)
+        {
+            _logger.LogWarning("Usuario invitado intentó agregar un consejo");
+            return Forbid();
         }
 
         try
@@ -178,23 +206,36 @@ public class MatchupsController : ControllerBase
     }
 
     /// <summary>
-    /// Actualiza un matchup existente
+    /// Actualiza un matchup existente (requiere autenticación)
     /// </summary>
     /// <param name="id">ID del matchup a actualizar</param>
     /// <param name="request">Datos actualizados del matchup</param>
     /// <returns>Matchup actualizado</returns>
     /// <response code="200">Retorna el matchup actualizado</response>
     /// <response code="400">Si los datos son inválidos</response>
+    /// <response code="401">Si el usuario no está autenticado</response>
+    /// <response code="403">Si el usuario es invitado</response>
     /// <response code="404">Si el matchup no existe</response>
+    [Authorize]
     [HttpPut("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateMatchup(int id, [FromBody] UpdateMatchupRequest request)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
+        }
+
+        // Verificar que el usuario no sea invitado
+        var isGuest = User.FindFirst("IsGuest")?.Value == "True";
+        if (isGuest)
+        {
+            _logger.LogWarning("Usuario invitado intentó actualizar un matchup");
+            return Forbid();
         }
 
         try
@@ -240,15 +281,28 @@ public class MatchupsController : ControllerBase
     }
 
     /// <summary>
-    /// Elimina un matchup
+    /// Elimina un matchup (requiere autenticación)
     /// </summary>
     /// <param name="id">ID del matchup a eliminar</param>
     /// <returns>No content</returns>
     /// <response code="204">Matchup eliminado exitosamente</response>
+    /// <response code="401">Si el usuario no está autenticado</response>
+    /// <response code="403">Si el usuario es invitado</response>
+    [Authorize]
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeleteMatchup(int id)
     {
+        // Verificar que el usuario no sea invitado
+        var isGuest = User.FindFirst("IsGuest")?.Value == "True";
+        if (isGuest)
+        {
+            _logger.LogWarning("Usuario invitado intentó eliminar un matchup");
+            return Forbid();
+        }
+
         await _matchupService.DeleteMatchupAsync(id);
         return NoContent();
     }

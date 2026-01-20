@@ -124,6 +124,16 @@ public class Matchup
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // ============================================
+    // CREADOR DEL MATCHUP
+    // ============================================
+
+    /// <summary>
+    /// ID del usuario que creó este matchup (nullable para retrocompatibilidad)
+    /// </summary>
+    public string? CreatedById { get; set; }
+    public ApplicationUser? CreatedBy { get; set; }
+
     // Relaciones
     public ICollection<MatchupTip> Tips { get; set; } = new List<MatchupTip>();
 }

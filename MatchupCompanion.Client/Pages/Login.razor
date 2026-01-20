@@ -1,0 +1,142 @@
+@page "/login"
+@using MatchupCompanion.Shared.Models.Auth
+@using MatchupCompanion.Client.Services.Auth
+@inject IAuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Iniciar Sesión - Matchup Companion</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Iniciar Sesión</h2>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="@loginRequest" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText id="email" class="form-control" @bind-Value="loginRequest.Email" placeholder="correo@ejemplo.com" />
+                            <ValidationMessage For="@(() => loginRequest.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <InputText id="password" type="password" class="form-control" @bind-Value="loginRequest.Password" placeholder="Tu contraseña" />
+                            <ValidationMessage For="@(() => loginRequest.Password)" />
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="loginRequest.RememberMe" />
+                            <label class="form-check-label" for="rememberMe">
+                                Recordarme
+                            </label>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                }
+                                Iniciar Sesión
+                            </button>
+                        </div>
+                    </EditForm>
+
+                    <hr class="my-4" />
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-secondary" @onclick="HandleGuestLogin" disabled="@isLoading">
+                            <i class="bi bi-person"></i> Continuar como Invitado
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <p>¿No tienes cuenta? <a href="/register">Regístrate aquí</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3" role="alert">
+                <strong>Nota:</strong> Los invitados pueden ver matchups pero no pueden editarlos o crear nuevos.
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginRequest = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            var result = await AuthService.LoginAsync(loginRequest);
+
+            if (result == null)
+            {
+                errorMessage = "Email o contraseña incorrectos.";
+                return;
+            }
+
+            // Redirigir a la URL de retorno o a la home
+            Navigation.NavigateTo(ReturnUrl ?? "/", true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al iniciar sesión: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleGuestLogin()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            var result = await AuthService.LoginAsGuestAsync();
+
+            if (result == null)
+            {
+                errorMessage = "No se pudo crear una sesión de invitado.";
+                return;
+            }
+
+            // Redirigir a la home
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al crear sesión de invitado: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

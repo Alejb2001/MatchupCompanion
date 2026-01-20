@@ -1,12 +1,16 @@
 @page "/edit-matchup"
 @page "/edit-matchup/{MatchupId:int}"
 @using MatchupCompanion.Shared.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
 @inject IChampionService ChampionService
 @inject IRoleService RoleService
 @inject IMatchupService MatchupService
 @inject IRuneService RuneService
 @inject IItemService ItemService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <h3>Editar Matchup</h3>
 

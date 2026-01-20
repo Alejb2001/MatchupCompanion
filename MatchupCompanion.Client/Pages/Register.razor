@@ -1,0 +1,139 @@
+@page "/register"
+@using MatchupCompanion.Shared.Models.Auth
+@using MatchupCompanion.Shared.Models
+@using MatchupCompanion.Client.Services.Auth
+@using MatchupCompanion.Client.Services
+@inject IAuthenticationService AuthService
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+
+<PageTitle>Registro - Matchup Companion</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Crear Cuenta</h2>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="@registerRequest" OnValidSubmit="HandleRegister">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText id="email" class="form-control" @bind-Value="registerRequest.Email" placeholder="correo@ejemplo.com" />
+                            <ValidationMessage For="@(() => registerRequest.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nombre de Usuario</label>
+                            <InputText id="username" class="form-control" @bind-Value="registerRequest.UserName" placeholder="Tu nombre de usuario" />
+                            <ValidationMessage For="@(() => registerRequest.UserName)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="displayName" class="form-label">Nombre para Mostrar (Opcional)</label>
+                            <InputText id="displayName" class="form-control" @bind-Value="registerRequest.DisplayName" placeholder="Nombre que verán otros usuarios" />
+                            <ValidationMessage For="@(() => registerRequest.DisplayName)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <InputText id="password" type="password" class="form-control" @bind-Value="registerRequest.Password" placeholder="Mínimo 6 caracteres" />
+                            <ValidationMessage For="@(() => registerRequest.Password)" />
+                            <small class="form-text text-muted">
+                                Debe contener al menos: 1 mayúscula, 1 minúscula y 1 número
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
+                            <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="registerRequest.ConfirmPassword" placeholder="Repite tu contraseña" />
+                            <ValidationMessage For="@(() => registerRequest.ConfirmPassword)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="preferredRole" class="form-label">Rol Preferido (Opcional)</label>
+                            <InputSelect id="preferredRole" class="form-select" @bind-Value="registerRequest.PreferredRoleId">
+                                <option value="">-- Selecciona tu rol preferido --</option>
+                                @foreach (var role in roles)
+                                {
+                                    <option value="@role.Id">@role.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                }
+                                Crear Cuenta
+                            </button>
+                        </div>
+                    </EditForm>
+
+                    <div class="text-center mt-3">
+                        <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión aquí</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest registerRequest = new();
+    private List<RoleDto> roles = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            roles = await RoleService.GetAllRolesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar roles: {ex.Message}";
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            var result = await AuthService.RegisterAsync(registerRequest);
+
+            if (result == null)
+            {
+                errorMessage = "No se pudo crear la cuenta. El email o nombre de usuario ya están en uso.";
+                return;
+            }
+
+            // Redirigir a la home después del registro exitoso
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al registrar usuario: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -2,10 +2,14 @@
 @using MatchupCompanion.Shared.Models
 @using MatchupCompanion.Client.Services
 @using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
 @inject IMatchupService MatchupService
 @inject IChampionService ChampionService
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Crear Matchup</PageTitle>
 

@@ -1,12 +1,14 @@
 using MatchupCompanion.API.Models.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatchupCompanion.API.Data;
 
 /// <summary>
 /// Contexto de base de datos principal de la aplicación
+/// Hereda de IdentityDbContext para soporte de autenticación
 /// </summary>
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -15,7 +17,7 @@ public class ApplicationDbContext : DbContext
 
     // DbSets para cada entidad
     public DbSet<Champion> Champions { get; set; }
-    public DbSet<Role> Roles { get; set; }
+    public DbSet<Role> GameRoles { get; set; }  // Renombrado para evitar conflicto con IdentityRole
     public DbSet<Matchup> Matchups { get; set; }
     public DbSet<MatchupTip> MatchupTips { get; set; }
     public DbSet<Rune> Runes { get; set; }
@@ -24,6 +26,9 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Renombrar tabla Role para evitar conflicto con IdentityRole
+        modelBuilder.Entity<Role>().ToTable("GameRoles");
 
         // Configuración de la entidad Champion
         modelBuilder.Entity<Champion>(entity =>
@@ -65,6 +70,12 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(m => m.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Relación con el creador del matchup
+            entity.HasOne(m => m.CreatedBy)
+                .WithMany(u => u.CreatedMatchups)
+                .HasForeignKey(m => m.CreatedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Índice compuesto para búsquedas rápidas
             entity.HasIndex(m => new { m.PlayerChampionId, m.EnemyChampionId, m.RoleId })
                 .IsUnique();
@@ -77,6 +88,12 @@ public class ApplicationDbContext : DbContext
                 .WithMany(m => m.Tips)
                 .HasForeignKey(mt => mt.MatchupId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Relación con el autor del tip
+            entity.HasOne(mt => mt.Author)
+                .WithMany(u => u.CreatedTips)
+                .HasForeignKey(mt => mt.AuthorId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasIndex(mt => mt.Category);
             entity.HasIndex(mt => mt.Priority);
@@ -97,6 +114,16 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(i => i.Name);
             entity.HasIndex(i => i.IsCompleted);
             entity.HasIndex(i => i.IsPurchasable);
+        });
+
+        // Configuración de ApplicationUser
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            // Relación con rol preferido
+            entity.HasOne(u => u.PreferredRole)
+                .WithMany()
+                .HasForeignKey(u => u.PreferredRoleId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Seed data inicial

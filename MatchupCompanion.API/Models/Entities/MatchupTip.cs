@@ -33,7 +33,13 @@ public class MatchupTip
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Información del autor (para futuras extensiones con autenticación)
+    // Información del autor
     [MaxLength(100)]
     public string? AuthorName { get; set; }
+
+    /// <summary>
+    /// ID del usuario que creó este tip (nullable para retrocompatibilidad)
+    /// </summary>
+    public string? AuthorId { get; set; }
+    public ApplicationUser? Author { get; set; }
 }

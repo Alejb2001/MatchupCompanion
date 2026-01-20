@@ -1,16 +1,17 @@
 # Estado Actual del Proyecto - Matchup Companion
 
-**Última actualización**: 19 de Enero, 2026
+**Última actualización**: 20 de Enero, 2026
 **Desarrollador**: Alejandro Burciaga Calzadillas
 
 ---
 
 ## Resumen Ejecutivo
 
-**Estado General**: Backend y Frontend funcionales y operativos
-**Versión**: 0.3.0 (Alpha)
-**Base de Datos**: Configurada con 172 campeones, 200+ items y runas (en español)
-**Frontend**: Blazor WebAssembly con sistema de edición de matchups y autocompletado
+**Estado General**: Backend y Frontend funcionales y operativos con autenticación completa
+**Versión**: 0.4.0 (Alpha)
+**Base de Datos**: Configurada con 172 campeones, 200+ items, runas y sistema de usuarios (en español)
+**Frontend**: Blazor WebAssembly con sistema de edición de matchups, autocompletado y autenticación JWT
+**Autenticación**: Sistema completo de login, registro y sesiones de invitado implementado
 
 ---
 
@@ -29,12 +30,16 @@
 
 #### Base de Datos
 - Migraciones creadas y aplicadas
-- 7 tablas: `Roles`, `Champions`, `Matchups`, `MatchupTips`, `Runes`, `Items`, `__EFMigrationsHistory`
+- 13 tablas principales:
+  - **Juego**: `GameRoles`, `Champions`, `Matchups`, `MatchupTips`, `Runes`, `Items`
+  - **Identity**: `AspNetUsers`, `AspNetRoles`, `AspNetUserRoles`, `AspNetUserClaims`, `AspNetRoleClaims`, `AspNetUserLogins`, `AspNetUserTokens`
+  - **Sistema**: `__EFMigrationsHistory`
 - Relaciones entre tablas configuradas correctamente
-- 5 roles predefinidos (Top, Jungle, Mid, ADC, Support)
+- 5 roles de juego predefinidos (Top, Jungle, Mid, ADC, Support)
 - 172 campeones sincronizados desde Data Dragon (español)
 - 200+ items sincronizados desde Data Dragon (español)
 - Runas sincronizadas desde Data Dragon (español)
+- Sistema de usuarios con ASP.NET Core Identity configurado
 
 **Detalles de la BD**:
 ```
@@ -56,6 +61,7 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 **Servicios de Negocio**:
 - `IChampionService` / `ChampionService`
 - `IMatchupService` / `MatchupService`
+- `IAuthService` / `AuthService` - Autenticación y gestión de usuarios
 
 **Servicios Externos**:
 - `RiotApiService` - Sincronización con Data Dragon
@@ -78,13 +84,14 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 - DELETE /{id} - Eliminar campeón
 
 **MatchupsController** (`/api/Matchups`):
-- GET - Obtener todos los matchups
-- GET /{id} - Obtener matchup por ID
-- GET /champion/{championId} - Matchups de un campeón
-- GET /specific - Matchup específico (playerChampionId, enemyChampionId)
-- POST - Crear matchup
-- PUT /{id} - Actualizar matchup
-- DELETE /{id} - Eliminar matchup
+- GET - Obtener todos los matchups (público)
+- GET /{id} - Obtener matchup por ID (público)
+- GET /champion/{championId} - Matchups de un campeón (público)
+- GET /specific - Matchup específico (playerChampionId, enemyChampionId) (público)
+- POST - Crear matchup ⚠️ **Requiere autenticación - No invitados**
+- PUT /{id} - Actualizar matchup ⚠️ **Requiere autenticación - No invitados**
+- DELETE /{id} - Eliminar matchup ⚠️ **Requiere autenticación - No invitados**
+- POST /tips - Agregar tip ⚠️ **Requiere autenticación - No invitados**
 
 **MatchupTipsController** (`/api/MatchupTips`):
 - GET - Obtener todos los tips
@@ -114,15 +121,26 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 - POST /sync-all - Sincronizar todo (campeones, runas, items)
 - GET /version - Obtener versión actual de Data Dragon
 
+**AuthController** (`/api/Auth`) - ⭐ NUEVO:
+- POST /register - Registrar nuevo usuario
+- POST /login - Iniciar sesión (retorna JWT token)
+- POST /guest - Crear sesión de invitado (24 horas)
+- POST /logout - Cerrar sesión
+- GET /me - Obtener usuario actual (requiere autenticación)
+- GET /validate - Validar token JWT
+
 #### Modelos de Datos
 
 **Entidades**:
 - `Champion` - Campeones de LoL
 - `Role` - Roles/Líneas (Top, Jungle, Mid, ADC, Support)
-- `Matchup` - Enfrentamiento entre dos campeones (con campos de estrategia, items y runas)
-- `MatchupTip` - Consejos específicos para un matchup
+- `Matchup` - Enfrentamiento entre dos campeones (con campos de estrategia, items, runas y creador)
+- `MatchupTip` - Consejos específicos para un matchup (con autor)
 - `Rune` - Runas de LoL (sincronizadas desde Data Dragon)
 - `Item` - Items de LoL (sincronizados desde Data Dragon)
+- `ApplicationUser` - Usuario del sistema (extiende IdentityUser) ⭐ NUEVO
+  - Campos: DisplayName, PreferredRoleId, CreatedAt, LastLoginAt, IsGuest, GuestExpiresAt
+  - Relaciones: CreatedMatchups, CreatedTips
 
 **DTOs**:
 - `ChampionDto`, `CreateChampionDto`, `UpdateChampionDto`
@@ -131,6 +149,8 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 - `RoleDto`
 - `RuneDto`
 - `ItemDto`
+- **Auth DTOs** ⭐ NUEVO:
+  - `LoginRequest`, `RegisterRequest`, `AuthResponse`, `UserDto`, `RefreshTokenRequest`
 
 ---
 
@@ -149,6 +169,13 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 - `IMatchupService` / `MatchupService` - Comunicación con API de matchups
 - `IRuneService` / `RuneService` - Comunicación con API de runas
 - `IItemService` / `ItemService` - Comunicación con API de items
+- `IAuthenticationService` / `AuthenticationService` - Autenticación y gestión de tokens ⭐ NUEVO
+
+#### Autenticación ⭐ NUEVO
+- `CustomAuthenticationStateProvider` - Proveedor de estado de autenticación
+- Tokens JWT almacenados en localStorage (Blazored.LocalStorage)
+- Validación automática de expiración de tokens
+- Actualización automática de headers de autorización
 
 **Métodos implementados**:
 - GetAllChampionsAsync(), GetChampionByIdAsync(int id), GetChampionsByRoleAsync(int roleId)
@@ -184,7 +211,7 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 - Lista de tips organizados
 - Navegación a agregar tips
 
-**CreateMatchup.razor** (`/create-matchup`):
+**CreateMatchup.razor** (`/create-matchup`) ⚠️ **Requiere autenticación - No invitados**:
 - Formulario para crear nuevo matchup
 - Selección de campeón jugador
 - Selección de campeón enemigo
@@ -194,7 +221,7 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 - Validación de formulario
 - Redirección después de crear
 
-**EditMatchup.razor** (`/edit-matchup/{id}`):
+**EditMatchup.razor** (`/edit-matchup/{id}`) ⚠️ **Requiere autenticación - No invitados**:
 - Formulario para editar matchup existente
 - **Búsqueda con autocompletado** para campeones (campos de texto con filtrado en tiempo real)
 - **Búsqueda con autocompletado** para items
@@ -204,13 +231,28 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 - Campo de notas de estrategia
 - Validación de formulario
 
-**AddTip.razor** (`/add-tip/{matchupId}`):
+**AddTip.razor** (`/add-tip/{matchupId}`) ⚠️ **Requiere autenticación**:
 - Formulario para agregar tip a matchup
 - Selección de categoría (Early Game, Mid Game, Late Game, Items, Runes, General)
 - Campo de descripción del tip
 - Selección de prioridad (1-5)
 - Validación de formulario
 - Redirección a detalles del matchup después de agregar
+
+**Login.razor** (`/login`) ⭐ NUEVO:
+- Formulario de inicio de sesión
+- Campos: Email, Contraseña
+- Checkbox "Recordarme"
+- Botón "Continuar como Invitado" (crea sesión de 24 horas)
+- Manejo de errores
+- Redirección a página original tras login exitoso
+
+**Register.razor** (`/register`) ⭐ NUEVO:
+- Formulario de registro de usuario
+- Campos: Email, Nombre de Usuario, Nombre para Mostrar, Contraseña, Confirmar Contraseña
+- Selección de rol preferido de LoL (opcional)
+- Validación de contraseñas (min 6 caracteres, mayúsculas, minúsculas, números)
+- Redirección automática tras registro exitoso
 
 #### Modelos Compartidos (MatchupCompanion.Shared)
 
@@ -224,14 +266,24 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 - `CreateMatchupTipDto` - DTO para crear tip
 - `RuneDto` - Representación de runa
 - `ItemDto` - Representación de item
+- **Auth DTOs** ⭐ NUEVO:
+  - `LoginRequest` - Datos de inicio de sesión
+  - `RegisterRequest` - Datos de registro
+  - `AuthResponse` - Respuesta con token JWT y datos de usuario
+  - `UserDto` - Información de usuario
 
 ---
 
 ## Componentes Pendientes
 
 ### Funcionalidades Adicionales
-- Autenticación y autorización (ASP.NET Core Identity)
+- ~~Autenticación y autorización (ASP.NET Core Identity)~~ ✅ **COMPLETADO** (20/01/2026)
 - Sistema de votación para tips
+- Recuperación de contraseña (forgot password)
+- Confirmación de email
+- Refresh tokens para renovación automática
+- OAuth (Google, Discord, Riot Games)
+- Roles de administrador y moderador
 - Caching (Redis o in-memory)
 - Tests unitarios
 - Tests de integración
@@ -242,9 +294,28 @@ Ubicación: C:\Users\alejb\AppData\Local\Microsoft\Microsoft SQL Server Local DB
 
 ## Seguridad
 
-### Configuración
+### Configuración de Autenticación ⭐ NUEVO
 
-**Estado**: Configurado correctamente
+**Estado**: Sistema de autenticación completo implementado
+
+**Características de seguridad**:
+- JWT tokens con firma HMAC SHA256
+- Tokens de 60 minutos de expiración (configurable)
+- Contraseñas hasheadas con ASP.NET Core Identity
+- Validación de contraseñas: min 6 caracteres, mayúsculas, minúsculas, números
+- Protección de endpoints con `[Authorize]`
+- Validación adicional para bloquear usuarios invitados en endpoints de edición
+- Tokens almacenados en localStorage del navegador
+- Sesiones de invitado con expiración de 24 horas
+
+**IMPORTANTE**: La clave secreta JWT en `appsettings.json` es para desarrollo. **CAMBIARLA EN PRODUCCIÓN** y usar variables de entorno.
+
+**Control de acceso**:
+- **Usuarios registrados**: Pueden crear, editar y eliminar matchups y tips
+- **Invitados**: Solo pueden ver matchups (sesión de 24 horas)
+- **No autenticados**: Redirigidos a `/login` al intentar acceder a rutas protegidas
+
+### Configuración de Data Dragon
 
 **Nota**: La sincronización con Data Dragon **no requiere API key**. Los datos se obtienen del CDN público de Riot Games.
 
@@ -376,6 +447,11 @@ JOIN Roles r ON m.RoleId = r.Id;
    - Solución: Configurar sincronización automática con `language = "es_ES"` en Program.cs
    - Ubicación: `Program.cs` (auto-sync al iniciar)
 
+6. **Conflicto de tabla Roles con IdentityRole** (20/01/2026)
+   - Problema: La tabla `Roles` de LoL colisionaba con `Roles` de Identity
+   - Solución: Renombrar DbSet a `GameRoles` y tabla a `GameRoles` en OnModelCreating
+   - Ubicación: `ApplicationDbContext.cs`, `RoleRepository.cs`
+
 ### Configuración de Puertos
 
 **HTTP**: 5007
@@ -399,9 +475,12 @@ La API usa automáticamente la versión más reciente de Data Dragon.
 4. Mostrar imágenes de campeones en la interfaz
 
 ### Mediano Plazo
-1. Implementar autenticación básica con ASP.NET Core Identity
-2. Agregar caching para mejorar rendimiento
-3. Sistema de votación para tips
+1. ~~Implementar autenticación básica con ASP.NET Core Identity~~ ✅ **COMPLETADO**
+2. Implementar recuperación de contraseña
+3. Agregar confirmación de email
+4. Implementar refresh tokens
+5. Agregar caching para mejorar rendimiento
+6. Sistema de votación para tips
 
 ### Largo Plazo
 1. Estadísticas y analytics
@@ -418,4 +497,12 @@ Para reportar problemas o sugerencias, crear un issue en el repositorio.
 
 ---
 
-**Última revisión**: 19 de Enero, 2026
+## Documentación Adicional
+
+- [AUTENTICACION.md](AUTENTICACION.md) - Guía completa del sistema de autenticación
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Arquitectura del proyecto
+- [README.md](README.md) - Documentación general
+
+---
+
+**Última revisión**: 20 de Enero, 2026
