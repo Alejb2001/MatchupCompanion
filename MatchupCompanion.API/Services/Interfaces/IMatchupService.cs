@@ -11,7 +11,7 @@ public interface IMatchupService
     Task<MatchupDto?> GetMatchupByIdAsync(int id);
     Task<MatchupDto?> GetMatchupByChampionsAndRoleAsync(int playerChampionId, int enemyChampionId, int roleId);
     Task<IEnumerable<MatchupDto>> GetMatchupsByPlayerChampionAsync(int playerChampionId);
-    Task<MatchupDto> CreateMatchupAsync(CreateMatchupRequest request);
+    Task<MatchupDto> CreateMatchupAsync(CreateMatchupRequest request, string userId);
     Task<MatchupDto> UpdateMatchupAsync(int id, UpdateMatchupRequest request);
     Task<MatchupDto> AddTipToMatchupAsync(CreateMatchupTipRequest request);
     Task DeleteMatchupAsync(int id);

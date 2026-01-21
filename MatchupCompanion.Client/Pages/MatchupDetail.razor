@@ -1,10 +1,12 @@
 @page "/matchup/{id:int}"
 @using MatchupCompanion.Shared.Models
 @using MatchupCompanion.Client.Services
+@using MatchupCompanion.Client.Services.Auth
 @inject IMatchupService MatchupService
 @inject IRuneService RuneService
 @inject IItemService ItemService
 @inject ISummonerSpellService SummonerSpellService
+@inject IAuthenticationService AuthService
 @inject NavigationManager Navigation
 
 <PageTitle>Detalles del Matchup</PageTitle>
@@ -38,20 +40,66 @@
         <div class="row">
             <div class="col-lg-12 d-flex justify-content-between">
                 <button class="btn btn-secondary mb-3" @onclick="GoBack">
-                    Volver
+                    <i class="bi bi-arrow-left"></i> Volver
                 </button>
-                <button class="btn btn-primary mb-3" @onclick="NavigateToEdit">
-                    <i class="bi bi-pencil"></i> Editar Matchup
-                </button>
+                <div class="d-flex gap-2">
+                    @if (canEdit)
+                    {
+                        <button class="btn btn-primary mb-3" @onclick="NavigateToEdit">
+                            <i class="bi bi-pencil"></i> Editar
+                        </button>
+                    }
+                    @if (canDelete)
+                    {
+                        <button class="btn btn-danger mb-3" @onclick="ShowDeleteConfirmation" disabled="@isDeleting">
+                            @if (isDeleting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            }
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                    }
+                </div>
             </div>
         </div>
+
+        @if (showDeleteModal)
+        {
+            <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">Confirmar Eliminación</h5>
+                            <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteConfirmation"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>¿Estás seguro de que deseas eliminar este matchup?</p>
+                            <p class="text-danger fw-bold">Esta acción no se puede deshacer.</p>
+                            <p><strong>Matchup:</strong> @matchup?.PlayerChampion.Name VS @matchup?.EnemyChampion.Name</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseDeleteConfirmation">
+                                Cancelar
+                            </button>
+                            <button type="button" class="btn btn-danger" @onclick="ConfirmDelete" disabled="@isDeleting">
+                                @if (isDeleting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                }
+                                Sí, eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
 
         <div class="row mb-4">
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
                         <h3 class="mb-0">
-                            @matchup.PlayerChampion.Name VS @matchup.EnemyChampion.Name
+                            @matchup?.PlayerChampion.Name VS @matchup?.EnemyChampion.Name
                         </h3>
                     </div>
                     <div class="card-body">
@@ -442,6 +490,10 @@
     private MatchupDto? matchup;
     private bool isLoading = true;
     private string? errorMessage;
+    private bool canEdit = false;
+    private bool canDelete = false;
+    private bool showDeleteModal = false;
+    private bool isDeleting = false;
 
     // Runes data
     private List<RuneTreeDto> runeTrees = new();
@@ -483,6 +535,7 @@
                 await LoadRunesData();
                 await LoadItemsData();
                 await LoadSummonerSpellsData();
+                await CheckUserPermissions();
             }
         }
         catch (Exception ex)
@@ -492,6 +545,99 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task CheckUserPermissions()
+    {
+        if (matchup == null)
+        {
+            Console.WriteLine("CheckUserPermissions: matchup is null");
+            return;
+        }
+
+        try
+        {
+            Console.WriteLine($"CheckUserPermissions: Checking permissions for matchup {matchup.Id}");
+            Console.WriteLine($"Matchup CreatedById: {matchup.CreatedById}");
+
+            var currentUser = await AuthService.GetCurrentUserAsync();
+            if (currentUser == null)
+            {
+                Console.WriteLine("CheckUserPermissions: currentUser is null");
+                canEdit = false;
+                canDelete = false;
+                return;
+            }
+
+            Console.WriteLine($"Current user ID: {currentUser.Id}");
+            Console.WriteLine($"Current user IsGuest: {currentUser.IsGuest}");
+            Console.WriteLine($"Current user Roles: {string.Join(", ", currentUser.Roles ?? new List<string>())}");
+
+            // El usuario puede editar/eliminar si es el creador o es administrador
+            var isCreator = !string.IsNullOrEmpty(matchup.CreatedById) && matchup.CreatedById == currentUser.Id;
+            var isAdmin = currentUser.Roles?.Contains("Admin") ?? false;
+            var isGuest = currentUser.IsGuest;
+
+            Console.WriteLine($"IsCreator: {isCreator}");
+            Console.WriteLine($"IsAdmin: {isAdmin}");
+            Console.WriteLine($"IsGuest: {isGuest}");
+
+            // Los administradores pueden editar/eliminar cualquier matchup (incluso los antiguos sin createdById)
+            // Los usuarios normales solo pueden editar/eliminar sus propios matchups
+            canEdit = !isGuest && (isCreator || isAdmin);
+            canDelete = !isGuest && (isCreator || isAdmin);
+
+            Console.WriteLine($"canEdit: {canEdit}");
+            Console.WriteLine($"canDelete: {canDelete}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking permissions: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            canEdit = false;
+            canDelete = false;
+        }
+    }
+
+    private void ShowDeleteConfirmation()
+    {
+        showDeleteModal = true;
+    }
+
+    private void CloseDeleteConfirmation()
+    {
+        showDeleteModal = false;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (matchup == null) return;
+
+        isDeleting = true;
+        try
+        {
+            var success = await MatchupService.DeleteMatchupAsync(matchup.Id);
+
+            if (success)
+            {
+                Console.WriteLine("Matchup deleted successfully, navigating back...");
+                Navigation.NavigateTo("/matchups");
+            }
+            else
+            {
+                errorMessage = "No se pudo eliminar el matchup. Es posible que no tengas permisos.";
+                showDeleteModal = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al eliminar el matchup: {ex.Message}";
+            showDeleteModal = false;
+        }
+        finally
+        {
+            isDeleting = false;
         }
     }
 

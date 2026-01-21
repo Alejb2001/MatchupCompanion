@@ -32,6 +32,9 @@ public class AuthenticationService : IAuthenticationService
 
             if (!response.IsSuccessStatusCode)
             {
+                // Log del error para debugging
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Login failed: {response.StatusCode} - {errorContent}");
                 return null;
             }
 
@@ -39,12 +42,14 @@ public class AuthenticationService : IAuthenticationService
             if (authResponse != null)
             {
                 await SaveAuthDataAsync(authResponse);
+                Console.WriteLine("Login successful");
             }
 
             return authResponse;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Login exception: {ex.Message}");
             return null;
         }
     }
@@ -116,8 +121,8 @@ public class AuthenticationService : IAuthenticationService
             await _localStorage.RemoveItemAsync(TOKEN_KEY);
             await _localStorage.RemoveItemAsync(USER_KEY);
 
-            // Limpiar header de autorización
-            _httpClient.DefaultRequestHeaders.Authorization = null;
+            // El AuthorizationMessageHandler detectará automáticamente que no hay token
+            // No es necesario limpiar _httpClient.DefaultRequestHeaders.Authorization
 
             // Notificar cambio de estado de autenticación
             if (_authStateProvider is CustomAuthenticationStateProvider customProvider)
@@ -181,7 +186,8 @@ public class AuthenticationService : IAuthenticationService
     {
         // Método síncrono para obtener el token (usado en interceptors)
         // En Blazor WASM no podemos usar métodos async en algunos contextos
-        return _localStorage.GetItemAsStringAsync(TOKEN_KEY).GetAwaiter().GetResult();
+        var token = _localStorage.GetItemAsync<string>(TOKEN_KEY).GetAwaiter().GetResult();
+        return token?.Trim('"');
     }
 
     private async Task SaveAuthDataAsync(AuthResponse authResponse)
@@ -201,9 +207,8 @@ public class AuthenticationService : IAuthenticationService
         };
         await _localStorage.SetItemAsync(USER_KEY, userDto);
 
-        // Configurar header de autorización
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", authResponse.Token);
+        // El AuthorizationMessageHandler se encargará de añadir el token automáticamente
+        // No es necesario configurar _httpClient.DefaultRequestHeaders.Authorization
 
         // Notificar cambio de estado de autenticación
         if (_authStateProvider is CustomAuthenticationStateProvider customProvider)

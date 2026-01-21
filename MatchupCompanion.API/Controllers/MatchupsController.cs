@@ -141,9 +141,16 @@ public class MatchupsController : ControllerBase
             return Forbid();
         }
 
+        // Obtener el ID del usuario autenticado
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
         try
         {
-            var matchup = await _matchupService.CreateMatchupAsync(request);
+            var matchup = await _matchupService.CreateMatchupAsync(request, userId);
             return CreatedAtAction(
                 nameof(GetMatchupById),
                 new { id = matchup.Id },
@@ -281,18 +288,20 @@ public class MatchupsController : ControllerBase
     }
 
     /// <summary>
-    /// Elimina un matchup (requiere autenticación)
+    /// Elimina un matchup (requiere autenticación y ser el creador)
     /// </summary>
     /// <param name="id">ID del matchup a eliminar</param>
     /// <returns>No content</returns>
     /// <response code="204">Matchup eliminado exitosamente</response>
     /// <response code="401">Si el usuario no está autenticado</response>
-    /// <response code="403">Si el usuario es invitado</response>
+    /// <response code="403">Si el usuario no tiene permisos para eliminar este matchup</response>
+    /// <response code="404">Si el matchup no existe</response>
     [Authorize]
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteMatchup(int id)
     {
         // Verificar que el usuario no sea invitado
@@ -303,7 +312,34 @@ public class MatchupsController : ControllerBase
             return Forbid();
         }
 
+        // Obtener el matchup para verificar permisos
+        var matchup = await _matchupService.GetMatchupByIdAsync(id);
+        if (matchup == null)
+        {
+            return NotFound(new { message = "Matchup no encontrado" });
+        }
+
+        // Obtener el ID del usuario actual
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        // Verificar si el usuario es el creador del matchup o es administrador
+        var isAdmin = User.IsInRole("Admin");
+        var isCreator = !string.IsNullOrEmpty(matchup.CreatedById) && matchup.CreatedById == userId;
+
+        // Los administradores pueden eliminar cualquier matchup (incluso los antiguos sin createdById)
+        // Los usuarios normales solo pueden eliminar sus propios matchups
+        if (!isAdmin && !isCreator)
+        {
+            _logger.LogWarning("Usuario {UserId} intentó eliminar matchup {MatchupId} sin permisos", userId, id);
+            return Forbid();
+        }
+
         await _matchupService.DeleteMatchupAsync(id);
+        _logger.LogInformation("Usuario {UserId} (Admin: {IsAdmin}) eliminó matchup {MatchupId}", userId, isAdmin, id);
         return NoContent();
     }
 }

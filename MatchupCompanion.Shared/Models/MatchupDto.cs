@@ -44,6 +44,9 @@ public class MatchupDto
     public string? Strategy { get; set; }
 
     public List<MatchupTipDto> Tips { get; set; } = new();
+
+    // Información de auditoría
+    public string CreatedById { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

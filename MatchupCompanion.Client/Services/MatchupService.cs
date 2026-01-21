@@ -61,7 +61,17 @@ public class MatchupService : IMatchupService
     {
         try
         {
+            Console.WriteLine("Attempting to create matchup...");
             var response = await _httpClient.PostAsJsonAsync("api/Matchups", matchup);
+
+            Console.WriteLine($"Response status: {response.StatusCode}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error response: {errorContent}");
+            }
+
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<MatchupDto>();
         }
@@ -99,6 +109,32 @@ public class MatchupService : IMatchupService
         {
             Console.WriteLine($"Error al actualizar matchup: {ex.Message}");
             throw;
+        }
+    }
+
+    public async Task<bool> DeleteMatchupAsync(int id)
+    {
+        try
+        {
+            Console.WriteLine($"Attempting to delete matchup {id}...");
+            var response = await _httpClient.DeleteAsync($"api/Matchups/{id}");
+
+            Console.WriteLine($"Delete response status: {response.StatusCode}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error deleting matchup: {errorContent}");
+                return false;
+            }
+
+            Console.WriteLine($"Matchup {id} deleted successfully");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar matchup: {ex.Message}");
+            return false;
         }
     }
 

@@ -51,7 +51,7 @@ public class MatchupService : IMatchupService
         return matchups.Select(MapToDto);
     }
 
-    public async Task<MatchupDto> CreateMatchupAsync(CreateMatchupRequest request)
+    public async Task<MatchupDto> CreateMatchupAsync(CreateMatchupRequest request, string userId)
     {
         // Validar que los campeones existan
         var playerChampion = await _championRepository.GetByIdAsync(request.PlayerChampionId);
@@ -77,12 +77,13 @@ public class MatchupService : IMatchupService
             EnemyChampionId = request.EnemyChampionId,
             RoleId = request.RoleId,
             Difficulty = request.Difficulty,
-            GeneralAdvice = request.GeneralAdvice
+            GeneralAdvice = request.GeneralAdvice,
+            CreatedById = userId  // Asignar el usuario que crea el matchup
         };
 
         var createdMatchup = await _matchupRepository.CreateAsync(matchup);
-        _logger.LogInformation("Matchup creado: {PlayerChampionId} vs {EnemyChampionId} en {RoleId}",
-            request.PlayerChampionId, request.EnemyChampionId, request.RoleId);
+        _logger.LogInformation("Matchup creado por usuario {UserId}: {PlayerChampionId} vs {EnemyChampionId} en {RoleId}",
+            userId, request.PlayerChampionId, request.EnemyChampionId, request.RoleId);
 
         // Recargar con las relaciones
         var fullMatchup = await _matchupRepository.GetByIdAsync(createdMatchup.Id);
@@ -279,6 +280,7 @@ public class MatchupService : IMatchupService
                 AuthorName = t.AuthorName,
                 CreatedAt = t.CreatedAt
             }).ToList(),
+            CreatedById = matchup.CreatedById ?? string.Empty,
             CreatedAt = matchup.CreatedAt,
             UpdatedAt = matchup.UpdatedAt
         };

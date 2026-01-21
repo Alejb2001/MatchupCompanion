@@ -179,6 +179,13 @@ app.UseAuthorization();
 // Mapear controllers
 app.MapControllers();
 
+// Inicializar roles y usuarios admin
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await SeedData.InitializeAsync(services);
+}
+
 // Sincronización automática de datos de Riot al iniciar
 using (var scope = app.Services.CreateScope())
 {
