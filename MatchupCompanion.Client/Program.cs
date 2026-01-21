@@ -29,5 +29,6 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IMatchupService, MatchupService>();
 builder.Services.AddScoped<IRuneService, RuneService>();
 builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<ISummonerSpellService, SummonerSpellService>();
 
 await builder.Build().RunAsync();

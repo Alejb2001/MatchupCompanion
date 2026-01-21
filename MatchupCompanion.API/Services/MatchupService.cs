@@ -144,6 +144,14 @@ public class MatchupService : IMatchupService
         matchup.StartingItems = request.StartingItems;
         matchup.CoreItems = request.CoreItems;
         matchup.SituationalItems = request.SituationalItems;
+        matchup.FullBuildItems = request.FullBuildItems;
+
+        // Actualizar hechizos de invocador
+        matchup.SummonerSpell1Id = request.SummonerSpell1Id;
+        matchup.SummonerSpell2Id = request.SummonerSpell2Id;
+
+        // Actualizar orden de habilidades
+        matchup.AbilityOrder = request.AbilityOrder;
 
         // Actualizar estrategia
         matchup.Strategy = request.Strategy;
@@ -249,6 +257,14 @@ public class MatchupService : IMatchupService
             StartingItems = matchup.StartingItems,
             CoreItems = matchup.CoreItems,
             SituationalItems = matchup.SituationalItems,
+            FullBuildItems = matchup.FullBuildItems,
+
+            // Hechizos de invocador
+            SummonerSpell1Id = matchup.SummonerSpell1Id,
+            SummonerSpell2Id = matchup.SummonerSpell2Id,
+
+            // Orden de habilidades
+            AbilityOrder = matchup.AbilityOrder,
 
             // Estrategia
             Strategy = matchup.Strategy,

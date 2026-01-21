@@ -111,6 +111,37 @@ public class Matchup
     [MaxLength(200)]
     public string? SituationalItems { get; set; }
 
+    /// <summary>
+    /// IDs de items para full build separados por coma (6 items completos)
+    /// </summary>
+    [MaxLength(200)]
+    public string? FullBuildItems { get; set; }
+
+    // ============================================
+    // HECHIZOS DE INVOCADOR
+    // ============================================
+
+    /// <summary>
+    /// ID del primer hechizo de invocador recomendado
+    /// </summary>
+    public int? SummonerSpell1Id { get; set; }
+
+    /// <summary>
+    /// ID del segundo hechizo de invocador recomendado
+    /// </summary>
+    public int? SummonerSpell2Id { get; set; }
+
+    // ============================================
+    // ORDEN DE HABILIDADES
+    // ============================================
+
+    /// <summary>
+    /// Orden de habilidades recomendado (ej: "Q,W,E,Q,Q,R,Q,W,Q,W,R,W,W,E,E,R,E,E")
+    /// Niveles 1-18 separados por coma
+    /// </summary>
+    [MaxLength(100)]
+    public string? AbilityOrder { get; set; }
+
     // ============================================
     // ESTRATEGIA
     // ============================================

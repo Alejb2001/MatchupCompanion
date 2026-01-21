@@ -139,11 +139,13 @@ builder.Services.AddScoped<IMatchupTipRepository, MatchupTipRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IRuneRepository, RuneRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<SummonerSpellRepository>();
 
 // Inyección de dependencias - Servicios
 builder.Services.AddScoped<IChampionService, ChampionService>();
 builder.Services.AddScoped<IMatchupService, MatchupService>();
 builder.Services.AddScoped<MatchupCompanion.API.Services.Auth.IAuthService, MatchupCompanion.API.Services.Auth.AuthService>();
+builder.Services.AddScoped<SummonerSpellService>();
 
 // Inyección de dependencias - Servicios externos
 builder.Services.AddHttpClient<RiotApiService>();

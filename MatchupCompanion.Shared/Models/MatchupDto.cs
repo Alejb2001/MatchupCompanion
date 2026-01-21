@@ -31,6 +31,14 @@ public class MatchupDto
     public string? StartingItems { get; set; }
     public string? CoreItems { get; set; }
     public string? SituationalItems { get; set; }
+    public string? FullBuildItems { get; set; }
+
+    // Hechizos de invocador
+    public int? SummonerSpell1Id { get; set; }
+    public int? SummonerSpell2Id { get; set; }
+
+    // Orden de habilidades
+    public string? AbilityOrder { get; set; }
 
     // Estrategia
     public string? Strategy { get; set; }

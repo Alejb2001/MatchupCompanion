@@ -22,6 +22,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<MatchupTip> MatchupTips { get; set; }
     public DbSet<Rune> Runes { get; set; }
     public DbSet<Item> Items { get; set; }
+    public DbSet<SummonerSpell> SummonerSpells { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -116,6 +117,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(i => i.IsPurchasable);
         });
 
+        // Configuración de la entidad SummonerSpell
+        modelBuilder.Entity<SummonerSpell>(entity =>
+        {
+            entity.HasIndex(s => s.RiotSpellId).IsUnique();
+            entity.HasIndex(s => s.Name);
+        });
+
         // Configuración de ApplicationUser
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
@@ -176,6 +184,91 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 PrimaryRoleId = 3,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
+            }
+        );
+
+        // Seed de Hechizos de Invocador (IDs de Riot Games)
+        modelBuilder.Entity<SummonerSpell>().HasData(
+            new SummonerSpell
+            {
+                Id = 1,
+                RiotSpellId = 4,
+                Name = "Flash",
+                Description = "Teleports your champion a short distance toward your cursor's location.",
+                Cooldown = 300,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerFlash.png"
+            },
+            new SummonerSpell
+            {
+                Id = 2,
+                RiotSpellId = 14,
+                Name = "Ignite",
+                Description = "Ignites target enemy champion, dealing true damage over 5 seconds.",
+                Cooldown = 180,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerDot.png"
+            },
+            new SummonerSpell
+            {
+                Id = 3,
+                RiotSpellId = 12,
+                Name = "Teleport",
+                Description = "After channeling for 4 seconds, teleports your champion to target allied structure or minion.",
+                Cooldown = 360,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerTeleport.png"
+            },
+            new SummonerSpell
+            {
+                Id = 4,
+                RiotSpellId = 11,
+                Name = "Smite",
+                Description = "Deals true damage to target monster or enemy minion.",
+                Cooldown = 90,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerSmite.png"
+            },
+            new SummonerSpell
+            {
+                Id = 5,
+                RiotSpellId = 3,
+                Name = "Exhaust",
+                Description = "Exhausts target enemy champion, reducing their Movement Speed and damage dealt.",
+                Cooldown = 210,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerExhaust.png"
+            },
+            new SummonerSpell
+            {
+                Id = 6,
+                RiotSpellId = 7,
+                Name = "Heal",
+                Description = "Restores Health to your champion and target allied champion and grants Movement Speed.",
+                Cooldown = 240,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerHeal.png"
+            },
+            new SummonerSpell
+            {
+                Id = 7,
+                RiotSpellId = 6,
+                Name = "Ghost",
+                Description = "Your champion gains increased Movement Speed and can move through units.",
+                Cooldown = 210,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerHaste.png"
+            },
+            new SummonerSpell
+            {
+                Id = 8,
+                RiotSpellId = 21,
+                Name = "Barrier",
+                Description = "Shields your champion from damage.",
+                Cooldown = 180,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerBarrier.png"
+            },
+            new SummonerSpell
+            {
+                Id = 9,
+                RiotSpellId = 1,
+                Name = "Cleanse",
+                Description = "Removes all disables and summoner spell debuffs affecting your champion.",
+                Cooldown = 210,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerBoost.png"
             }
         );
     }

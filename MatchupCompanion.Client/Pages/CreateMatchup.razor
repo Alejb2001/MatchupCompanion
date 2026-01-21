@@ -34,55 +34,87 @@
                         <EditForm Model="@createMatchupDto" OnValidSubmit="@HandleSubmit">
                             <DataAnnotationsValidator />
 
+                            @* Campo de búsqueda para Tu Campeón *@
                             <div class="mb-3">
                                 <label for="playerChampion" class="form-label">Tu Campeón *</label>
-                                <InputSelect id="playerChampion" class="form-select"
-                                             @bind-Value="createMatchupDto.PlayerChampionId">
-                                    <option value="0">-- Selecciona tu campeón --</option>
-                                    @foreach (var champion in champions)
+                                <div class="position-relative">
+                                    <input type="text" class="form-control"
+                                           @bind="playerChampionSearch"
+                                           @bind:event="oninput"
+                                           @onfocus="() => showPlayerDropdown = true"
+                                           placeholder="Escribe para buscar tu campeón..." />
+                                    @if (showPlayerDropdown && filteredPlayerChampions.Any())
                                     {
-                                        <option value="@champion.Id">@champion.Name</option>
+                                        <div class="dropdown-menu show w-100 autocomplete-dropdown">
+                                            @foreach (var champion in filteredPlayerChampions.Take(10))
+                                            {
+                                                <button type="button" class="dropdown-item"
+                                                        @onclick="() => SelectPlayerChampion(champion)">
+                                                    @champion.Name
+                                                </button>
+                                            }
+                                        </div>
                                     }
-                                </InputSelect>
+                                    @if (createMatchupDto.PlayerChampionId > 0)
+                                    {
+                                        <small class="text-success">Seleccionado: @GetChampionName(createMatchupDto.PlayerChampionId)</small>
+                                    }
+                                </div>
                                 <ValidationMessage For="@(() => createMatchupDto.PlayerChampionId)" />
                             </div>
 
+                            @* Campo de búsqueda para Campeón Enemigo *@
                             <div class="mb-3">
                                 <label for="enemyChampion" class="form-label">Campeón Enemigo *</label>
-                                <InputSelect id="enemyChampion" class="form-select"
-                                             @bind-Value="createMatchupDto.EnemyChampionId">
-                                    <option value="0">-- Selecciona el campeón enemigo --</option>
-                                    @foreach (var champion in champions)
+                                <div class="position-relative">
+                                    <input type="text" class="form-control"
+                                           @bind="enemyChampionSearch"
+                                           @bind:event="oninput"
+                                           @onfocus="() => showEnemyDropdown = true"
+                                           placeholder="Escribe para buscar el campeón enemigo..." />
+                                    @if (showEnemyDropdown && filteredEnemyChampions.Any())
                                     {
-                                        <option value="@champion.Id">@champion.Name</option>
+                                        <div class="dropdown-menu show w-100 autocomplete-dropdown">
+                                            @foreach (var champion in filteredEnemyChampions.Take(10))
+                                            {
+                                                <button type="button" class="dropdown-item"
+                                                        @onclick="() => SelectEnemyChampion(champion)">
+                                                    @champion.Name
+                                                </button>
+                                            }
+                                        </div>
                                     }
-                                </InputSelect>
+                                    @if (createMatchupDto.EnemyChampionId > 0)
+                                    {
+                                        <small class="text-success">Seleccionado: @GetChampionName(createMatchupDto.EnemyChampionId)</small>
+                                    }
+                                </div>
                                 <ValidationMessage For="@(() => createMatchupDto.EnemyChampionId)" />
                             </div>
 
                             <div class="mb-3">
                                 <label for="role" class="form-label">Rol *</label>
-                                <InputSelect id="role" class="form-select"
-                                             @bind-Value="createMatchupDto.RoleId">
+                                <select class="form-select" @bind="createMatchupDto.RoleId">
                                     <option value="0">-- Selecciona el rol --</option>
                                     @foreach (var role in roles)
                                     {
                                         <option value="@role.Id">@role.Name</option>
                                     }
-                                </InputSelect>
+                                </select>
                                 <ValidationMessage For="@(() => createMatchupDto.RoleId)" />
                             </div>
 
                             <div class="mb-3">
                                 <label for="difficulty" class="form-label">Dificultad *</label>
-                                <InputSelect id="difficulty" class="form-select"
-                                             @bind-Value="createMatchupDto.Difficulty">
-                                    <option value="">-- Selecciona la dificultad --</option>
-                                    <option value="Easy">Easy - Fácil de ganar</option>
-                                    <option value="Medium">Medium - Balanceado</option>
-                                    <option value="Hard">Hard - Difícil</option>
-                                    <option value="Extreme">Extreme - Muy difícil</option>
-                                </InputSelect>
+                                <div class="btn-group w-100" role="group">
+                                    @foreach (var diff in difficulties)
+                                    {
+                                        <input type="radio" class="btn-check" name="difficulty" id="diff-@diff"
+                                               value="@diff" checked="@(createMatchupDto.Difficulty == diff)"
+                                               @onchange="@(() => createMatchupDto.Difficulty = diff)">
+                                        <label class="btn @GetDifficultyButtonClass(diff)" for="diff-@diff">@diff</label>
+                                    }
+                                </div>
                                 <ValidationMessage For="@(() => createMatchupDto.Difficulty)" />
                             </div>
 
@@ -92,7 +124,7 @@
                                                @bind-Value="createMatchupDto.GeneralAdvice"
                                                placeholder="Escribe un consejo general sobre cómo jugar este matchup..." />
                                 <ValidationMessage For="@(() => createMatchupDto.GeneralAdvice)" />
-                                <small class="form-text text-muted">Máximo 1000 caracteres</small>
+                                <small class="form-text text-muted">@((createMatchupDto.GeneralAdvice?.Length ?? 0))/1000 caracteres</small>
                             </div>
 
                             @if (!string.IsNullOrEmpty(errorMessage))
@@ -133,15 +165,51 @@
     </div>
 </div>
 
+<style>
+    .autocomplete-dropdown {
+        position: absolute;
+        z-index: 1000;
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .autocomplete-dropdown .dropdown-item:hover {
+        background-color: #e9ecef;
+    }
+</style>
+
 @code {
     private CreateMatchupDto createMatchupDto = new();
     private List<ChampionDto> champions = new();
     private List<RoleDto> roles = new();
 
+    // Campos de búsqueda
+    private string playerChampionSearch = "";
+    private string enemyChampionSearch = "";
+
+    // Control de dropdowns
+    private bool showPlayerDropdown = false;
+    private bool showEnemyDropdown = false;
+
     private bool isLoadingData = true;
     private bool isSubmitting = false;
     private string? errorMessage;
     private string? successMessage;
+
+    private readonly string[] difficulties = { "Easy", "Medium", "Hard", "Extreme" };
+
+    // Propiedades computadas para filtrar campeones
+    private IEnumerable<ChampionDto> filteredPlayerChampions =>
+        string.IsNullOrWhiteSpace(playerChampionSearch)
+            ? Enumerable.Empty<ChampionDto>()
+            : champions.Where(c => c.Name.Contains(playerChampionSearch, StringComparison.OrdinalIgnoreCase))
+                       .OrderBy(c => c.Name);
+
+    private IEnumerable<ChampionDto> filteredEnemyChampions =>
+        string.IsNullOrWhiteSpace(enemyChampionSearch)
+            ? Enumerable.Empty<ChampionDto>()
+            : champions.Where(c => c.Name.Contains(enemyChampionSearch, StringComparison.OrdinalIgnoreCase))
+                       .OrderBy(c => c.Name);
 
     protected override async Task OnInitializedAsync()
     {
@@ -166,14 +234,60 @@
         }
     }
 
+    private void SelectPlayerChampion(ChampionDto champion)
+    {
+        createMatchupDto.PlayerChampionId = champion.Id;
+        playerChampionSearch = champion.Name;
+        showPlayerDropdown = false;
+    }
+
+    private void SelectEnemyChampion(ChampionDto champion)
+    {
+        createMatchupDto.EnemyChampionId = champion.Id;
+        enemyChampionSearch = champion.Name;
+        showEnemyDropdown = false;
+    }
+
+    private string GetChampionName(int championId)
+    {
+        return champions.FirstOrDefault(c => c.Id == championId)?.Name ?? "???";
+    }
+
+    private string GetDifficultyButtonClass(string difficulty) => difficulty switch
+    {
+        "Easy" => "btn-outline-success",
+        "Medium" => "btn-outline-warning",
+        "Hard" => "btn-outline-danger",
+        "Extreme" => "btn-outline-dark",
+        _ => "btn-outline-secondary"
+    };
+
     private async Task HandleSubmit()
     {
         errorMessage = null;
         successMessage = null;
 
+        if (createMatchupDto.PlayerChampionId == 0)
+        {
+            errorMessage = "Debes seleccionar tu campeón";
+            return;
+        }
+
+        if (createMatchupDto.EnemyChampionId == 0)
+        {
+            errorMessage = "Debes seleccionar el campeón enemigo";
+            return;
+        }
+
         if (createMatchupDto.PlayerChampionId == createMatchupDto.EnemyChampionId)
         {
             errorMessage = "Los campeones no pueden ser iguales";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(createMatchupDto.Difficulty))
+        {
+            errorMessage = "Debes seleccionar una dificultad";
             return;
         }
 

@@ -9,6 +9,7 @@
 @inject IMatchupService MatchupService
 @inject IRuneService RuneService
 @inject IItemService ItemService
+@inject ISummonerSpellService SummonerSpellService
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -289,9 +290,13 @@ else
                                                             @onclick="@(() => AddItemToList(item.RiotItemId, "core"))" title="Core">
                                                         +Core
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-info"
+                                                    <button type="button" class="btn btn-sm btn-outline-info me-1"
                                                             @onclick="@(() => AddItemToList(item.RiotItemId, "situational"))" title="Situacional">
                                                         +Sit
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-success"
+                                                            @onclick="@(() => AddItemToList(item.RiotItemId, "fullbuild"))" title="Full Build">
+                                                        +Full
                                                     </button>
                                                 </div>
                                             </div>
@@ -361,6 +366,63 @@ else
                             }
                         </div>
                     </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-12">
+                            <label class="form-label">Full Build (6 items completos)</label>
+                            <input type="text" class="form-control" @bind="editModel.FullBuildItems"
+                                   placeholder="IDs separados por coma" />
+                            @if (!string.IsNullOrEmpty(editModel.FullBuildItems))
+                            {
+                                <div class="mt-1">
+                                    @foreach (var itemId in ParseItemIds(editModel.FullBuildItems))
+                                    {
+                                        var itemName = GetItemName(itemId);
+                                        <span class="badge bg-success me-1 mb-1">
+                                            @itemName
+                                            <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
+                                                    @onclick="@(() => RemoveItemFromList(itemId, "fullbuild"))"></button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hechizos de Invocador -->
+                <div class="mb-4">
+                    <h5>Hechizos de Invocador Recomendados</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Hechizo 1</label>
+                            <select class="form-select" @bind="editModel.SummonerSpell1Id">
+                                <option value="">-- Seleccionar --</option>
+                                @foreach (var spell in summonerSpells)
+                                {
+                                    <option value="@spell.Id">@spell.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Hechizo 2</label>
+                            <select class="form-select" @bind="editModel.SummonerSpell2Id">
+                                <option value="">-- Seleccionar --</option>
+                                @foreach (var spell in summonerSpells)
+                                {
+                                    <option value="@spell.Id">@spell.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orden de Habilidades -->
+                <div class="mb-4">
+                    <h5>Orden de Habilidades</h5>
+                    <p class="text-muted small">Ingresa el orden para niveles 1-18 (ej: Q,W,E,Q,Q,R,Q,W,Q,W,R,W,W,E,E,R,E,E)</p>
+                    <input type="text" class="form-control" @bind="editModel.AbilityOrder"
+                           placeholder="Q,W,E,Q,Q,R,Q,W,Q,W,R,W,W,E,E,R,E,E" />
+                    <small class="text-muted">Separar por comas. Q, W, E para habilidades básicas, R para ultimate</small>
                 </div>
 
                 <!-- Estrategia -->
@@ -425,6 +487,7 @@ else
     private List<RoleDto> roles = new();
     private List<RuneTreeDto> runeTrees = new();
     private List<ItemDto> items = new();
+    private List<SummonerSpellDto> summonerSpells = new();
 
     private int selectedPlayerChampionId;
     private int selectedEnemyChampionId;
@@ -478,13 +541,15 @@ else
             var rolesTask = RoleService.GetAllRolesAsync();
             var runeTreesTask = RuneService.GetRuneTreesAsync();
             var itemsTask = ItemService.GetAllItemsAsync();
+            var summonerSpellsTask = SummonerSpellService.GetAllSummonerSpellsAsync();
 
-            await Task.WhenAll(championsTask, rolesTask, runeTreesTask, itemsTask);
+            await Task.WhenAll(championsTask, rolesTask, runeTreesTask, itemsTask, summonerSpellsTask);
 
             champions = await championsTask;
             roles = await rolesTask;
             runeTrees = await runeTreesTask;
             items = await itemsTask;
+            summonerSpells = await summonerSpellsTask;
 
             if (MatchupId.HasValue)
             {
@@ -596,6 +661,10 @@ else
             StartingItems = matchup.StartingItems,
             CoreItems = matchup.CoreItems,
             SituationalItems = matchup.SituationalItems,
+            FullBuildItems = matchup.FullBuildItems,
+            SummonerSpell1Id = matchup.SummonerSpell1Id,
+            SummonerSpell2Id = matchup.SummonerSpell2Id,
+            AbilityOrder = matchup.AbilityOrder,
             Strategy = matchup.Strategy
         };
     }
@@ -640,6 +709,7 @@ else
             "starting" => editModel.StartingItems,
             "core" => editModel.CoreItems,
             "situational" => editModel.SituationalItems,
+            "fullbuild" => editModel.FullBuildItems,
             _ => ""
         };
 
@@ -654,6 +724,7 @@ else
                 case "starting": editModel.StartingItems = newValue; break;
                 case "core": editModel.CoreItems = newValue; break;
                 case "situational": editModel.SituationalItems = newValue; break;
+                case "fullbuild": editModel.FullBuildItems = newValue; break;
             }
         }
 
@@ -668,6 +739,7 @@ else
             "starting" => editModel.StartingItems,
             "core" => editModel.CoreItems,
             "situational" => editModel.SituationalItems,
+            "fullbuild" => editModel.FullBuildItems,
             _ => ""
         };
 
@@ -679,6 +751,7 @@ else
             case "starting": editModel.StartingItems = newValue; break;
             case "core": editModel.CoreItems = newValue; break;
             case "situational": editModel.SituationalItems = newValue; break;
+            case "fullbuild": editModel.FullBuildItems = newValue; break;
         }
     }
 

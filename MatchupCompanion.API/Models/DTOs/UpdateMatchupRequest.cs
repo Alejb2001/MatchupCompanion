@@ -41,6 +41,17 @@ public class UpdateMatchupRequest
     [MaxLength(200)]
     public string? SituationalItems { get; set; }
 
+    [MaxLength(200)]
+    public string? FullBuildItems { get; set; }
+
+    // Hechizos de invocador
+    public int? SummonerSpell1Id { get; set; }
+    public int? SummonerSpell2Id { get; set; }
+
+    // Orden de habilidades
+    [MaxLength(100)]
+    public string? AbilityOrder { get; set; }
+
     // Estrategia
     [MaxLength(5000, ErrorMessage = "Strategy no puede exceder 5000 caracteres")]
     public string? Strategy { get; set; }

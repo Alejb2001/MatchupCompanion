@@ -4,6 +4,7 @@
 @inject IMatchupService MatchupService
 @inject IRuneService RuneService
 @inject IItemService ItemService
+@inject ISummonerSpellService SummonerSpellService
 @inject NavigationManager Navigation
 
 <PageTitle>Detalles del Matchup</PageTitle>
@@ -174,7 +175,7 @@
         }
 
         @* Sección de Items *@
-        @if (!string.IsNullOrEmpty(matchup.StartingItems) || !string.IsNullOrEmpty(matchup.CoreItems) || !string.IsNullOrEmpty(matchup.SituationalItems))
+        @if (!string.IsNullOrEmpty(matchup.StartingItems) || !string.IsNullOrEmpty(matchup.CoreItems) || !string.IsNullOrEmpty(matchup.SituationalItems) || !string.IsNullOrEmpty(matchup.FullBuildItems))
         {
             <div class="row mb-4">
                 <div class="col-lg-12">
@@ -225,6 +226,110 @@
                                     </div>
                                 </div>
                             }
+                            @if (fullBuildItems.Any())
+                            {
+                                <div class="mb-3">
+                                    <h5>Full Build (6 Items)</h5>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var item in fullBuildItems)
+                                        {
+                                            <div class="text-center" title="@item.Name - @item.TotalGold g">
+                                                @if (!string.IsNullOrEmpty(item.IconUrl))
+                                                {
+                                                    <img src="@item.IconUrl" alt="@item.Name"
+                                                         style="width: 48px; height: 48px; border-radius: 4px; border: 2px solid #28a745;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success p-2">
+                                                        @item.Name (@item.TotalGold g)
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* Sección de Hechizos de Invocador *@
+        @if (matchup.SummonerSpell1Id.HasValue || matchup.SummonerSpell2Id.HasValue)
+        {
+            <div class="row mb-4">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">Hechizos de Invocador Recomendados</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex gap-4 align-items-center">
+                                @if (matchup.SummonerSpell1Id.HasValue && summonerSpell1 != null)
+                                {
+                                    <div class="text-center">
+                                        @if (!string.IsNullOrEmpty(summonerSpell1.ImageUrl))
+                                        {
+                                            <img src="@summonerSpell1.ImageUrl" alt="@summonerSpell1.Name"
+                                                 style="width: 64px; height: 64px; border-radius: 8px; border: 3px solid #0d6efd;"
+                                                 title="@summonerSpell1.Description" />
+                                        }
+                                        <p class="mb-0 mt-2 fw-bold">@summonerSpell1.Name</p>
+                                        <small class="text-muted">@summonerSpell1.Cooldown s CD</small>
+                                    </div>
+                                }
+                                @if (matchup.SummonerSpell2Id.HasValue && summonerSpell2 != null)
+                                {
+                                    <div class="text-center">
+                                        @if (!string.IsNullOrEmpty(summonerSpell2.ImageUrl))
+                                        {
+                                            <img src="@summonerSpell2.ImageUrl" alt="@summonerSpell2.Name"
+                                                 style="width: 64px; height: 64px; border-radius: 8px; border: 3px solid #0d6efd;"
+                                                 title="@summonerSpell2.Description" />
+                                        }
+                                        <p class="mb-0 mt-2 fw-bold">@summonerSpell2.Name</p>
+                                        <small class="text-muted">@summonerSpell2.Cooldown s CD</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* Sección de Orden de Habilidades *@
+        @if (!string.IsNullOrEmpty(matchup.AbilityOrder))
+        {
+            <div class="row mb-4">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h4 class="mb-0">Orden de Habilidades (Niveles 1-18)</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap gap-2">
+                                @{
+                                    var abilities = matchup.AbilityOrder.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                                    for (int i = 0; i < abilities.Length && i < 18; i++)
+                                    {
+                                        var ability = abilities[i].Trim().ToUpper();
+                                        var badgeClass = ability switch
+                                        {
+                                            "Q" => "bg-primary",
+                                            "W" => "bg-success",
+                                            "E" => "bg-info",
+                                            "R" => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                        <span class="badge @badgeClass" style="font-size: 0.95rem; padding: 0.6rem 0.8rem; min-width: 60px;">
+                                            Lv @(i + 1): @ability
+                                        </span>
+                                    }
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -353,6 +458,11 @@
     private List<ItemDto> startingItems = new();
     private List<ItemDto> coreItems = new();
     private List<ItemDto> situationalItems = new();
+    private List<ItemDto> fullBuildItems = new();
+
+    // Summoner Spells data
+    private SummonerSpellDto? summonerSpell1;
+    private SummonerSpellDto? summonerSpell2;
 
     protected override async Task OnInitializedAsync()
     {
@@ -372,6 +482,7 @@
             {
                 await LoadRunesData();
                 await LoadItemsData();
+                await LoadSummonerSpellsData();
             }
         }
         catch (Exception ex)
@@ -459,10 +570,37 @@
             {
                 situationalItems = await ItemService.GetItemsByRiotIdsAsync(matchup.SituationalItems);
             }
+
+            if (!string.IsNullOrEmpty(matchup.FullBuildItems))
+            {
+                fullBuildItems = await ItemService.GetItemsByRiotIdsAsync(matchup.FullBuildItems);
+            }
         }
         catch
         {
             // Silently fail - items are optional display
+        }
+    }
+
+    private async Task LoadSummonerSpellsData()
+    {
+        if (matchup == null) return;
+
+        try
+        {
+            if (matchup.SummonerSpell1Id.HasValue)
+            {
+                summonerSpell1 = await SummonerSpellService.GetSummonerSpellByIdAsync(matchup.SummonerSpell1Id.Value);
+            }
+
+            if (matchup.SummonerSpell2Id.HasValue)
+            {
+                summonerSpell2 = await SummonerSpellService.GetSummonerSpellByIdAsync(matchup.SummonerSpell2Id.Value);
+            }
+        }
+        catch
+        {
+            // Silently fail - summoner spells are optional display
         }
     }
 
