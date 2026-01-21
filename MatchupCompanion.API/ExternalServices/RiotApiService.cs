@@ -87,6 +87,9 @@ public class RiotApiService
 
             foreach (var (key, champion) in championData.Data)
             {
+                // Obtener datos detallados del campeón (incluyendo habilidades)
+                var detailedChampion = await GetChampionDetailsAsync(champion.Id, language, version);
+
                 // Verificar si el campeón ya existe en nuestra base de datos
                 var existingChampion = await _championRepository.GetByRiotIdAsync(champion.Key);
 
@@ -100,8 +103,30 @@ public class RiotApiService
                         Title = champion.Title,
                         Description = champion.Blurb,
                         ImageUrl = $"{DataDragonBaseUrl}/cdn/{version}/img/champion/{champion.Image.Full}",
-                        // Mapear roles (esto es una simplificación, puede mejorarse)
-                        PrimaryRoleId = MapRoleToId(champion.Tags.FirstOrDefault())
+                        PrimaryRoleId = MapRoleToId(champion.Tags.FirstOrDefault()),
+                        // Habilidades
+                        QSpellId = detailedChampion?.Spells.ElementAtOrDefault(0)?.Id,
+                        QSpellName = detailedChampion?.Spells.ElementAtOrDefault(0)?.Name,
+                        QSpellIcon = detailedChampion?.Spells.ElementAtOrDefault(0)?.Image.Full != null
+                            ? $"{DataDragonBaseUrl}/cdn/{version}/img/spell/{detailedChampion.Spells[0].Image.Full}"
+                            : null,
+                        WSpellId = detailedChampion?.Spells.ElementAtOrDefault(1)?.Id,
+                        WSpellName = detailedChampion?.Spells.ElementAtOrDefault(1)?.Name,
+                        WSpellIcon = detailedChampion?.Spells.ElementAtOrDefault(1)?.Image.Full != null
+                            ? $"{DataDragonBaseUrl}/cdn/{version}/img/spell/{detailedChampion.Spells[1].Image.Full}"
+                            : null,
+                        ESpellId = detailedChampion?.Spells.ElementAtOrDefault(2)?.Id,
+                        ESpellName = detailedChampion?.Spells.ElementAtOrDefault(2)?.Name,
+                        ESpellIcon = detailedChampion?.Spells.ElementAtOrDefault(2)?.Image.Full != null
+                            ? $"{DataDragonBaseUrl}/cdn/{version}/img/spell/{detailedChampion.Spells[2].Image.Full}"
+                            : null,
+                        RSpellId = detailedChampion?.Passive?.Image.Full != null
+                            ? detailedChampion.Passive.Name
+                            : null,
+                        RSpellName = detailedChampion?.Spells.ElementAtOrDefault(3)?.Name,
+                        RSpellIcon = detailedChampion?.Spells.ElementAtOrDefault(3)?.Image.Full != null
+                            ? $"{DataDragonBaseUrl}/cdn/{version}/img/spell/{detailedChampion.Spells[3].Image.Full}"
+                            : null
                     };
 
                     await _championRepository.CreateAsync(newChampion);
@@ -116,10 +141,35 @@ public class RiotApiService
                     existingChampion.Description = champion.Blurb;
                     existingChampion.ImageUrl = $"{DataDragonBaseUrl}/cdn/{version}/img/champion/{champion.Image.Full}";
 
+                    // Actualizar habilidades
+                    existingChampion.QSpellId = detailedChampion?.Spells.ElementAtOrDefault(0)?.Id;
+                    existingChampion.QSpellName = detailedChampion?.Spells.ElementAtOrDefault(0)?.Name;
+                    existingChampion.QSpellIcon = detailedChampion?.Spells.ElementAtOrDefault(0)?.Image.Full != null
+                        ? $"{DataDragonBaseUrl}/cdn/{version}/img/spell/{detailedChampion.Spells[0].Image.Full}"
+                        : null;
+                    existingChampion.WSpellId = detailedChampion?.Spells.ElementAtOrDefault(1)?.Id;
+                    existingChampion.WSpellName = detailedChampion?.Spells.ElementAtOrDefault(1)?.Name;
+                    existingChampion.WSpellIcon = detailedChampion?.Spells.ElementAtOrDefault(1)?.Image.Full != null
+                        ? $"{DataDragonBaseUrl}/cdn/{version}/img/spell/{detailedChampion.Spells[1].Image.Full}"
+                        : null;
+                    existingChampion.ESpellId = detailedChampion?.Spells.ElementAtOrDefault(2)?.Id;
+                    existingChampion.ESpellName = detailedChampion?.Spells.ElementAtOrDefault(2)?.Name;
+                    existingChampion.ESpellIcon = detailedChampion?.Spells.ElementAtOrDefault(2)?.Image.Full != null
+                        ? $"{DataDragonBaseUrl}/cdn/{version}/img/spell/{detailedChampion.Spells[2].Image.Full}"
+                        : null;
+                    existingChampion.RSpellId = detailedChampion?.Spells.ElementAtOrDefault(3)?.Id;
+                    existingChampion.RSpellName = detailedChampion?.Spells.ElementAtOrDefault(3)?.Name;
+                    existingChampion.RSpellIcon = detailedChampion?.Spells.ElementAtOrDefault(3)?.Image.Full != null
+                        ? $"{DataDragonBaseUrl}/cdn/{version}/img/spell/{detailedChampion.Spells[3].Image.Full}"
+                        : null;
+
                     await _championRepository.UpdateAsync(existingChampion);
                     syncedCount++;
                     _logger.LogInformation("Campeón actualizado: {ChampionName}", existingChampion.Name);
                 }
+
+                // Pequeña pausa para no saturar la API
+                await Task.Delay(100);
             }
 
             _logger.LogInformation("Sincronización completada. {Count} campeones sincronizados", syncedCount);
@@ -129,6 +179,29 @@ public class RiotApiService
         {
             _logger.LogError(ex, "Error al sincronizar campeones desde Riot API");
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Obtiene los detalles completos de un campeón específico (incluyendo habilidades)
+    /// </summary>
+    private async Task<RiotChampionDetailed?> GetChampionDetailsAsync(string championId, string language, string version)
+    {
+        try
+        {
+            var url = $"{DataDragonBaseUrl}/cdn/{version}/data/{language}/champion/{championId}.json";
+            var response = await _httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var detailedData = JsonSerializer.Deserialize<RiotChampionDetailedResponse>(jsonString);
+
+            return detailedData?.Data?.Values.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "No se pudieron obtener detalles del campeón {ChampionId}", championId);
+            return null;
         }
     }
 
@@ -521,6 +594,61 @@ public class RiotApiService
 
         [JsonPropertyName("purchasable")]
         public bool Purchasable { get; set; }
+    }
+
+    // ============================================
+    // Clases para Detalles de Campeón (champion/{championId}.json)
+    // ============================================
+
+    private class RiotChampionDetailedResponse
+    {
+        [JsonPropertyName("data")]
+        public Dictionary<string, RiotChampionDetailed>? Data { get; set; }
+    }
+
+    private class RiotChampionDetailed
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [JsonPropertyName("passive")]
+        public RiotSpellPassive Passive { get; set; } = new();
+
+        [JsonPropertyName("spells")]
+        public List<RiotSpell> Spells { get; set; } = new();
+    }
+
+    private class RiotSpellPassive
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [JsonPropertyName("image")]
+        public RiotChampionImage Image { get; set; } = new();
+    }
+
+    private class RiotSpell
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [JsonPropertyName("image")]
+        public RiotChampionImage Image { get; set; } = new();
     }
 
     #endregion

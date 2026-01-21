@@ -13,4 +13,21 @@ public class ChampionDto
     public string? Description { get; set; }
     public int? PrimaryRoleId { get; set; }
     public string? PrimaryRoleName { get; set; }
+
+    // Habilidades
+    public string? QSpellId { get; set; }
+    public string? QSpellName { get; set; }
+    public string? QSpellIcon { get; set; }
+
+    public string? WSpellId { get; set; }
+    public string? WSpellName { get; set; }
+    public string? WSpellIcon { get; set; }
+
+    public string? ESpellId { get; set; }
+    public string? ESpellName { get; set; }
+    public string? ESpellIcon { get; set; }
+
+    public string? RSpellId { get; set; }
+    public string? RSpellName { get; set; }
+    public string? RSpellIcon { get; set; }
 }

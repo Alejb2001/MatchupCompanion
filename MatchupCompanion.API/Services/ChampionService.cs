@@ -30,7 +30,19 @@ public class ChampionService : IChampionService
             ImageUrl = c.ImageUrl,
             Description = c.Description,
             PrimaryRoleId = c.PrimaryRoleId,
-            PrimaryRoleName = c.PrimaryRole?.Name
+            PrimaryRoleName = c.PrimaryRole?.Name,
+            QSpellId = c.QSpellId,
+            QSpellName = c.QSpellName,
+            QSpellIcon = c.QSpellIcon,
+            WSpellId = c.WSpellId,
+            WSpellName = c.WSpellName,
+            WSpellIcon = c.WSpellIcon,
+            ESpellId = c.ESpellId,
+            ESpellName = c.ESpellName,
+            ESpellIcon = c.ESpellIcon,
+            RSpellId = c.RSpellId,
+            RSpellName = c.RSpellName,
+            RSpellIcon = c.RSpellIcon
         });
     }
 
@@ -49,7 +61,19 @@ public class ChampionService : IChampionService
             ImageUrl = champion.ImageUrl,
             Description = champion.Description,
             PrimaryRoleId = champion.PrimaryRoleId,
-            PrimaryRoleName = champion.PrimaryRole?.Name
+            PrimaryRoleName = champion.PrimaryRole?.Name,
+            QSpellId = champion.QSpellId,
+            QSpellName = champion.QSpellName,
+            QSpellIcon = champion.QSpellIcon,
+            WSpellId = champion.WSpellId,
+            WSpellName = champion.WSpellName,
+            WSpellIcon = champion.WSpellIcon,
+            ESpellId = champion.ESpellId,
+            ESpellName = champion.ESpellName,
+            ESpellIcon = champion.ESpellIcon,
+            RSpellId = champion.RSpellId,
+            RSpellName = champion.RSpellName,
+            RSpellIcon = champion.RSpellIcon
         };
     }
 
@@ -65,7 +89,19 @@ public class ChampionService : IChampionService
             ImageUrl = c.ImageUrl,
             Description = c.Description,
             PrimaryRoleId = c.PrimaryRoleId,
-            PrimaryRoleName = c.PrimaryRole?.Name
+            PrimaryRoleName = c.PrimaryRole?.Name,
+            QSpellId = c.QSpellId,
+            QSpellName = c.QSpellName,
+            QSpellIcon = c.QSpellIcon,
+            WSpellId = c.WSpellId,
+            WSpellName = c.WSpellName,
+            WSpellIcon = c.WSpellIcon,
+            ESpellId = c.ESpellId,
+            ESpellName = c.ESpellName,
+            ESpellIcon = c.ESpellIcon,
+            RSpellId = c.RSpellId,
+            RSpellName = c.RSpellName,
+            RSpellIcon = c.RSpellIcon
         });
     }
 }
