@@ -1,4 +1,5 @@
 using MatchupCompanion.API.Models.DTOs.Auth;
+using MatchupCompanion.API.Models.Entities;
 
 namespace MatchupCompanion.API.Services.Auth;
 
@@ -36,4 +37,14 @@ public interface IAuthService
     /// Verifica si un usuario tiene permisos para editar un matchup
     /// </summary>
     Task<bool> CanEditMatchupAsync(string userId, int matchupId);
+
+    /// <summary>
+    /// Obtiene un usuario por su ID
+    /// </summary>
+    Task<ApplicationUser?> GetUserByIdAsync(string userId);
+
+    /// <summary>
+    /// Añade un usuario a un rol
+    /// </summary>
+    Task AddUserToRoleAsync(ApplicationUser user, string roleName);
 }

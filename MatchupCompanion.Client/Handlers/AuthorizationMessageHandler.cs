@@ -26,11 +26,6 @@ public class AuthorizationMessageHandler : DelegatingHandler
             // Limpiar comillas si existen (GetItemAsStringAsync puede devolver "token" en lugar de token)
             token = token.Trim('"');
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            Console.WriteLine($"Adding Authorization header to: {request.RequestUri}");
-        }
-        else
-        {
-            Console.WriteLine($"No token found for request to: {request.RequestUri}");
         }
 
         return await base.SendAsync(request, cancellationToken);

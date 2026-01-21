@@ -17,17 +17,20 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
     private readonly ApplicationDbContext _context;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
+        RoleManager<IdentityRole> roleManager,
         IConfiguration configuration,
         ApplicationDbContext context)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _roleManager = roleManager;
         _configuration = configuration;
         _context = context;
     }
@@ -194,6 +197,26 @@ public class AuthService : IAuthService
 
         // Solo el creador puede editar
         return matchup.CreatedById == userId;
+    }
+
+    public async Task<ApplicationUser?> GetUserByIdAsync(string userId)
+    {
+        return await _userManager.FindByIdAsync(userId);
+    }
+
+    public async Task AddUserToRoleAsync(ApplicationUser user, string roleName)
+    {
+        // Crear el rol si no existe
+        if (!await _roleManager.RoleExistsAsync(roleName))
+        {
+            await _roleManager.CreateAsync(new IdentityRole(roleName));
+        }
+
+        // Añadir usuario al rol
+        if (!await _userManager.IsInRoleAsync(user, roleName))
+        {
+            await _userManager.AddToRoleAsync(user, roleName);
+        }
     }
 
     /// <summary>
