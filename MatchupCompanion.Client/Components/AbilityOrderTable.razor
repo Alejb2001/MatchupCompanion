@@ -1,0 +1,141 @@
+@using MatchupCompanion.Shared.Models
+
+<div class="ability-order-table-container">
+    <table class="ability-order-table">
+        <thead>
+            <tr>
+                <th class="ability-header">Habilidad</th>
+                @for (int level = 1; level <= 18; level++)
+                {
+                    <th class="level-header">@level</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (Champion != null)
+            {
+                <!-- Fila Q -->
+                <tr class="ability-row ability-q">
+                    <td class="ability-icon-cell">
+                        @if (!string.IsNullOrEmpty(Champion.QSpellIcon))
+                        {
+                            <img src="@Champion.QSpellIcon" alt="Q" class="ability-icon" title="@Champion.QSpellName" />
+                        }
+                        else
+                        {
+                            <div class="ability-letter ability-letter-q">Q</div>
+                        }
+                    </td>
+                    @for (int level = 1; level <= 18; level++)
+                    {
+                        var isSelected = AbilityLevels.ElementAtOrDefault(level - 1) == "Q";
+                        <td class="level-cell @(isSelected ? "selected selected-q" : "")">
+                            @if (isSelected)
+                            {
+                                <span class="ability-marker">Q</span>
+                            }
+                        </td>
+                    }
+                </tr>
+
+                <!-- Fila W -->
+                <tr class="ability-row ability-w">
+                    <td class="ability-icon-cell">
+                        @if (!string.IsNullOrEmpty(Champion.WSpellIcon))
+                        {
+                            <img src="@Champion.WSpellIcon" alt="W" class="ability-icon" title="@Champion.WSpellName" />
+                        }
+                        else
+                        {
+                            <div class="ability-letter ability-letter-w">W</div>
+                        }
+                    </td>
+                    @for (int level = 1; level <= 18; level++)
+                    {
+                        var isSelected = AbilityLevels.ElementAtOrDefault(level - 1) == "W";
+                        <td class="level-cell @(isSelected ? "selected selected-w" : "")">
+                            @if (isSelected)
+                            {
+                                <span class="ability-marker">W</span>
+                            }
+                        </td>
+                    }
+                </tr>
+
+                <!-- Fila E -->
+                <tr class="ability-row ability-e">
+                    <td class="ability-icon-cell">
+                        @if (!string.IsNullOrEmpty(Champion.ESpellIcon))
+                        {
+                            <img src="@Champion.ESpellIcon" alt="E" class="ability-icon" title="@Champion.ESpellName" />
+                        }
+                        else
+                        {
+                            <div class="ability-letter ability-letter-e">E</div>
+                        }
+                    </td>
+                    @for (int level = 1; level <= 18; level++)
+                    {
+                        var isSelected = AbilityLevels.ElementAtOrDefault(level - 1) == "E";
+                        <td class="level-cell @(isSelected ? "selected selected-e" : "")">
+                            @if (isSelected)
+                            {
+                                <span class="ability-marker">E</span>
+                            }
+                        </td>
+                    }
+                </tr>
+
+                <!-- Fila R -->
+                <tr class="ability-row ability-r">
+                    <td class="ability-icon-cell">
+                        @if (!string.IsNullOrEmpty(Champion.RSpellIcon))
+                        {
+                            <img src="@Champion.RSpellIcon" alt="R" class="ability-icon" title="@Champion.RSpellName" />
+                        }
+                        else
+                        {
+                            <div class="ability-letter ability-letter-r">R</div>
+                        }
+                    </td>
+                    @for (int level = 1; level <= 18; level++)
+                    {
+                        var isSelected = AbilityLevels.ElementAtOrDefault(level - 1) == "R";
+                        <td class="level-cell @(isSelected ? "selected selected-r" : "")">
+                            @if (isSelected)
+                            {
+                                <span class="ability-marker">R</span>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter]
+    public ChampionDto? Champion { get; set; }
+
+    [Parameter]
+    public string AbilityOrder { get; set; } = string.Empty;
+
+    private List<string> AbilityLevels { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(AbilityOrder))
+        {
+            AbilityLevels = AbilityOrder
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(a => a.Trim().ToUpper())
+                .Take(18)
+                .ToList();
+        }
+        else
+        {
+            AbilityLevels = new List<string>();
+        }
+    }
+}

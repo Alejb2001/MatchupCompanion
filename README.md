@@ -1,143 +1,241 @@
 # Matchup Companion
 
-Aplicación web full-stack construida con .NET 8 que permite a los jugadores de League of Legends buscar, crear y compartir estrategias para matchups de campeones.
+A comprehensive League of Legends matchup strategy management system built with Blazor WebAssembly and ASP.NET Core Web API.
 
-Este proyecto demuestra competencia en el ecosistema .NET, incluyendo ASP.NET Core Web API, Blazor WebAssembly y Entity Framework Core.
+## Overview
 
-**Estado**: Backend y frontend completamente funcionales. Base de datos configurada con 172 campeones sincronizados desde Riot Games Data Dragon.
+Matchup Companion helps League of Legends players share and discover champion matchup strategies. Users can create detailed guides including recommended runes, items, summoner spells, ability orders, and strategic tips for specific matchups.
 
-## Descripción del Proyecto
+**Current Status**: Fully functional application with authentication, authorization, CRUD operations, and Riot Games data integration.
 
-Esta aplicación web resuelve un problema común para los jugadores de League of Legends: "¿Cómo juego este matchup?" La aplicación permite a los usuarios:
+## Key Features
 
-1. Seleccionar dos campeones (tu campeón y el campeón enemigo)
-2. Ver consejos, niveles de dificultad y estrategias enviadas por otros usuarios para ese matchup específico
-3. Contribuir agregando sus propios consejos para matchups
+### 🎮 Matchup Management
+- **Create & Share**: Detailed matchup guides with difficulty ratings
+- **Rich Content**: Include runes, items, summoner spells, and ability order
+- **Strategic Tips**: Add categorized tips for different game phases
+- **Search & Filter**: Find matchups by champion, role, or difficulty
 
-La aplicación cuenta con un frontend reactivo en Blazor WebAssembly que consume una API backend de ASP.NET Core.
+### 🔐 Authentication & Security
+- **JWT Authentication**: Secure token-based authentication
+- **Role-Based Access**: Admin, User, and Guest roles
+- **Protected Endpoints**: Permission-based resource access
+- **Guest Mode**: Read-only access without registration
 
-## Stack de Tecnologías
+### 📊 Game Data Integration
+- **Automatic Sync**: Champion, rune, item, and spell data from Riot API
+- **Spanish Support**: Game data in Spanish (es_ES)
+- **Up-to-Date**: Synchronized on application startup
 
-Este proyecto usa una estructura de repositorio monolítico con una aplicación Blazor WebAssembly hospedada en ASP.NET Core.
+### 💻 Modern Architecture
+- **Frontend**: Blazor WebAssembly with Bootstrap 5
+- **Backend**: ASP.NET Core 8 Web API
+- **Database**: Entity Framework Core + SQL Server
+- **Authentication**: ASP.NET Core Identity + JWT
 
-**Backend (MatchupCompanion.API)**
-- ASP.NET Core Web API (.NET 8) - Endpoints RESTful
-- Entity Framework Core 8 - ORM y comunicación con base de datos
-- SQL Server LocalDB - Motor de base de datos (desarrollo)
-- Swagger/OpenAPI - Documentación interactiva de la API
-- Integración con Data Dragon - Sincronización automática de campeones desde la API de Riot Games
+## Technology Stack
 
-**Frontend (MatchupCompanion.Client)**
-- Blazor WebAssembly - SPA interactiva que se ejecuta en el navegador
-- C# - Lógica del cliente escrita en C# en lugar de JavaScript
-- Bootstrap 5 - Diseño UI responsivo
+### Backend
+- ASP.NET Core 8 Web API
+- Entity Framework Core 8
+- ASP.NET Core Identity
+- JWT Bearer Authentication
+- SQL Server LocalDB
+- Swagger/OpenAPI
 
-**Compartido (MatchupCompanion.Shared)**
-- DTOs (Data Transfer Objects) compartidos entre cliente y servidor para type safety
+### Frontend
+- Blazor WebAssembly (.NET 8)
+- Bootstrap 5
+- Blazored.LocalStorage
+- Custom HTTP Message Handlers
 
-## Características
+### External Services
+- Riot Games Data Dragon API
 
-**Backend API**
-- API RESTful completa con operaciones CRUD para Campeones, Matchups, Tips y Roles
-- 172 campeones sincronizados automáticamente desde Data Dragon
-- Documentación interactiva con Swagger
-- Arquitectura de patrón Repository con capa de servicios
-- Entity Framework Core con SQL Server LocalDB
+## Getting Started
 
-**Frontend**
-- Interfaz de usuario completa con Bootstrap 5
-- Búsqueda de matchups con selección de campeones y roles
-- Lista de matchups con filtrado dinámico
-- Vista detallada de matchup con tips categorizados
-- Formularios para crear matchups y agregar tips
-- Servicios HTTP para comunicación con API
-- Diseño responsivo para móvil y escritorio
+### Prerequisites
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- SQL Server LocalDB (included with Visual Studio)
+- Modern web browser
 
-## Inicio Rápido
+### Installation
 
-**Prerrequisitos**
-- .NET 8 SDK
-- SQL Server LocalDB (incluido con Visual Studio)
-- Visual Studio 2022 o VS Code
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/MatchupCompanion.git
+cd MatchupCompanion/MatchupCompanion
+```
 
-**Configuración**
+2. **Run the Backend**
+```bash
+cd MatchupCompanion.API
+dotnet run
+```
+The API will start at `http://localhost:5007`
 
-1. Clonar el repositorio
-   ```bash
-   git clone <repository-url>
-   cd MatchupCompanion
-   ```
+3. **Run the Frontend** (new terminal)
+```bash
+cd MatchupCompanion.Client
+dotnet run
+```
+The client will start at `http://localhost:5173`
 
-2. Configurar API Key de Riot (opcional, solo para sincronización)
-   - Copiar `appsettings.Development.json.example` a `appsettings.Development.json`
-   - Obtener una API key en https://developer.riotgames.com/
-   - Reemplazar `YOUR_RIOT_API_KEY_HERE` con tu key
-   - Este archivo NO debe ser commiteado a Git
+4. **First Run**
+   - Database is created automatically
+   - Game data synchronizes from Riot API
+   - Default admin account: `admin@matchup.com` / `Admin123`
 
-3. Aplicar migraciones (si es necesario)
-   ```bash
-   cd MatchupCompanion.API
-   dotnet ef database update
-   ```
+### Quick Start Guide
 
-4. Ejecutar el backend API
-   ```bash
-   cd MatchupCompanion.API
-   dotnet run
-   ```
-   - La API estará disponible en https://localhost:7285
-   - Swagger UI en https://localhost:7285
+1. **Browse**: View matchups without authentication
+2. **Register**: Create an account at `/register` to contribute
+3. **Login**: Access full features with your account
+4. **Create**: Share your matchup strategies
+5. **Manage**: Edit or delete your own matchups
 
-5. Sincronizar campeones (si la base de datos está vacía)
-   - En Swagger, ejecutar `POST /api/RiotSync/sync-champions`
-   - Esto descargará ~172 campeones actuales de League of Legends
-
-6. Ejecutar el frontend (en otra terminal)
-   ```bash
-   cd MatchupCompanion.Client
-   dotnet run
-   ```
-   - El cliente estará disponible en el puerto mostrado en consola (usualmente https://localhost:5001)
-   - La API debe estar ejecutándose en https://localhost:7285
-
-## Estructura del Proyecto
+## Project Structure
 
 ```
 MatchupCompanion/
-├── MatchupCompanion.API/           # Backend ASP.NET Core Web API
-│   ├── Controllers/                # Endpoints de la API
-│   ├── Services/                   # Lógica de negocio
-│   ├── Data/                       # DbContext y Repositorios
-│   ├── Models/                     # Entidades y DTOs
-│   ├── ExternalServices/           # RiotApiService (Data Dragon)
-│   └── Migrations/                 # Migraciones de EF Core
-├── MatchupCompanion.Client/        # Frontend Blazor WebAssembly
-│   ├── Pages/                      # Páginas Razor
-│   ├── Services/                   # Servicios HTTP
-│   └── Layout/                     # Componentes de layout
-├── MatchupCompanion.Shared/        # DTOs compartidos
-│   └── Models/                     # Objetos de transferencia de datos
-├── ARCHITECTURE.md                 # Documentación de arquitectura
-└── PROJECT-STATUS.md               # Estado actual del proyecto
+├── MatchupCompanion.API/          # Backend Web API
+│   ├── Controllers/               # REST endpoints
+│   ├── Services/                  # Business logic
+│   ├── Data/                      # EF Core repositories
+│   ├── Models/                    # Domain entities
+│   ├── ExternalServices/          # Riot API integration
+│   └── Migrations/                # Database migrations
+│
+├── MatchupCompanion.Client/       # Blazor WebAssembly
+│   ├── Pages/                     # UI components
+│   ├── Services/                  # HTTP services
+│   ├── Handlers/                  # Request handlers
+│   └── wwwroot/                   # Static assets
+│
+├── MatchupCompanion.Shared/       # Shared models
+│   └── Models/                    # DTOs
+│
+└── ARCHITECTURE.md                # Technical documentation
 ```
 
-## Mejoras Futuras
+## API Overview
 
-- Autenticación de usuarios con ASP.NET Core Identity
-- Sistema de votación para tips
-- Estadísticas avanzadas y win rates
-- Funcionalidad de edición y eliminación para matchups y tips
-- Imágenes de campeones desde Data Dragon
-- Caching para optimización de rendimiento
-- Tests unitarios y de integración
+### Authentication
+- `POST /api/auth/register` - Create account
+- `POST /api/auth/login` - Get JWT token
+- `POST /api/auth/guest` - Guest session
+- `GET /api/auth/me` - Current user info
 
-## Documentación
+### Matchups
+- `GET /api/matchups` - List all matchups
+- `GET /api/matchups/{id}` - Get matchup details
+- `GET /api/matchups/search` - Search matchups
+- `POST /api/matchups` - Create matchup (auth required)
+- `PUT /api/matchups/{id}` - Update matchup (auth + ownership)
+- `DELETE /api/matchups/{id}` - Delete matchup (auth + ownership)
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Detalles de arquitectura y patrones
-- [PROJECT-STATUS.md](PROJECT-STATUS.md) - Estado actual y próximos pasos
+### Game Data
+- `/api/champions` - Champion data
+- `/api/roles` - Role data
+- `/api/runes` - Rune data
+- `/api/items` - Item data
+- `/api/summonerspells` - Summoner spell data
+
+## Features in Detail
+
+### User Roles & Permissions
+
+| Action | Guest | User | Creator | Admin |
+|--------|-------|------|---------|-------|
+| View Matchups | ✅ | ✅ | ✅ | ✅ |
+| Create Matchup | ❌ | ✅ | ✅ | ✅ |
+| Edit Matchup | ❌ | ❌ | ✅ | ✅ |
+| Delete Matchup | ❌ | ❌ | ✅ | ✅ |
+| Add Tips | ❌ | ✅ | ✅ | ✅ |
+
+### Security Features
+- Password requirements (6+ chars, upper/lower/numbers)
+- JWT token expiration (60 minutes, configurable)
+- Automatic token injection in requests
+- Protected API endpoints
+- Guest session expiration (24 hours)
+
+## Configuration
+
+### JWT Settings (`appsettings.json`)
+```json
+{
+  "Jwt": {
+    "SecretKey": "your-secret-key",
+    "Issuer": "MatchupCompanionAPI",
+    "Audience": "MatchupCompanionClient",
+    "ExpirationInMinutes": 60
+  }
+}
+```
+
+### Database Connection
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MatchupCompanionDb;Trusted_Connection=true"
+  }
+}
+```
+
+## Development
+
+### Building
+```bash
+dotnet build
+```
+
+### Running Tests
+```bash
+dotnet test
+```
+
+### Database Migrations
+```bash
+cd MatchupCompanion.API
+dotnet ef migrations add MigrationName
+dotnet ef database update
+```
+
+### Swagger Documentation
+When running the API, access interactive documentation at:
+`http://localhost:5007/swagger`
+
+## Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Detailed technical architecture
+- API documentation available via Swagger UI
+
+## Future Enhancements
+
+- Matchup voting and rating system
+- User profiles and statistics
+- Image uploads for strategies
+- Video guide integration
+- Advanced search and filtering
+- Email notifications
+- Mobile app support
+- Social sharing features
+
+## License
+
+This project is provided for educational and portfolio purposes.
+
+## Acknowledgments
+
+- **Riot Games** for the Data Dragon API
+- **Microsoft** for .NET and Blazor
+- **Bootstrap** for UI components
 
 > **Estado Actual**: Backend funcional con sincronización de campeones desde Data Dragon de Riot Games. Base de datos SQL Server LocalDB configurada con 172 campeones sincronizados.
 
 ---
 
-**Creado por Alejandro Burciaga Calzadillas**
+**Note**: This project is not endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing League of Legends.
+
+**Developer**: Alejandro Burciaga Calzadillas

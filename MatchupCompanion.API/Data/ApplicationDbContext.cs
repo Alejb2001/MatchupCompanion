@@ -1,12 +1,14 @@
 using MatchupCompanion.API.Models.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatchupCompanion.API.Data;
 
 /// <summary>
 /// Contexto de base de datos principal de la aplicación
+/// Hereda de IdentityDbContext para soporte de autenticación
 /// </summary>
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -15,13 +17,19 @@ public class ApplicationDbContext : DbContext
 
     // DbSets para cada entidad
     public DbSet<Champion> Champions { get; set; }
-    public DbSet<Role> Roles { get; set; }
+    public DbSet<Role> GameRoles { get; set; }  // Renombrado para evitar conflicto con IdentityRole
     public DbSet<Matchup> Matchups { get; set; }
     public DbSet<MatchupTip> MatchupTips { get; set; }
+    public DbSet<Rune> Runes { get; set; }
+    public DbSet<Item> Items { get; set; }
+    public DbSet<SummonerSpell> SummonerSpells { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Renombrar tabla Role para evitar conflicto con IdentityRole
+        modelBuilder.Entity<Role>().ToTable("GameRoles");
 
         // Configuración de la entidad Champion
         modelBuilder.Entity<Champion>(entity =>
@@ -63,6 +71,12 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(m => m.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Relación con el creador del matchup
+            entity.HasOne(m => m.CreatedBy)
+                .WithMany(u => u.CreatedMatchups)
+                .HasForeignKey(m => m.CreatedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Índice compuesto para búsquedas rápidas
             entity.HasIndex(m => new { m.PlayerChampionId, m.EnemyChampionId, m.RoleId })
                 .IsUnique();
@@ -76,8 +90,48 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(mt => mt.MatchupId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Relación con el autor del tip
+            entity.HasOne(mt => mt.Author)
+                .WithMany(u => u.CreatedTips)
+                .HasForeignKey(mt => mt.AuthorId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             entity.HasIndex(mt => mt.Category);
             entity.HasIndex(mt => mt.Priority);
+        });
+
+        // Configuración de la entidad Rune
+        modelBuilder.Entity<Rune>(entity =>
+        {
+            entity.HasIndex(r => r.RiotRuneId).IsUnique();
+            entity.HasIndex(r => r.TreeId);
+            entity.HasIndex(r => r.SlotIndex);
+        });
+
+        // Configuración de la entidad Item
+        modelBuilder.Entity<Item>(entity =>
+        {
+            entity.HasIndex(i => i.RiotItemId).IsUnique();
+            entity.HasIndex(i => i.Name);
+            entity.HasIndex(i => i.IsCompleted);
+            entity.HasIndex(i => i.IsPurchasable);
+        });
+
+        // Configuración de la entidad SummonerSpell
+        modelBuilder.Entity<SummonerSpell>(entity =>
+        {
+            entity.HasIndex(s => s.RiotSpellId).IsUnique();
+            entity.HasIndex(s => s.Name);
+        });
+
+        // Configuración de ApplicationUser
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            // Relación con rol preferido
+            entity.HasOne(u => u.PreferredRole)
+                .WithMany()
+                .HasForeignKey(u => u.PreferredRoleId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Seed data inicial
@@ -130,6 +184,91 @@ public class ApplicationDbContext : DbContext
                 PrimaryRoleId = 3,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
+            }
+        );
+
+        // Seed de Hechizos de Invocador (IDs de Riot Games)
+        modelBuilder.Entity<SummonerSpell>().HasData(
+            new SummonerSpell
+            {
+                Id = 1,
+                RiotSpellId = 4,
+                Name = "Flash",
+                Description = "Teleports your champion a short distance toward your cursor's location.",
+                Cooldown = 300,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerFlash.png"
+            },
+            new SummonerSpell
+            {
+                Id = 2,
+                RiotSpellId = 14,
+                Name = "Ignite",
+                Description = "Ignites target enemy champion, dealing true damage over 5 seconds.",
+                Cooldown = 180,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerDot.png"
+            },
+            new SummonerSpell
+            {
+                Id = 3,
+                RiotSpellId = 12,
+                Name = "Teleport",
+                Description = "After channeling for 4 seconds, teleports your champion to target allied structure or minion.",
+                Cooldown = 360,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerTeleport.png"
+            },
+            new SummonerSpell
+            {
+                Id = 4,
+                RiotSpellId = 11,
+                Name = "Smite",
+                Description = "Deals true damage to target monster or enemy minion.",
+                Cooldown = 90,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerSmite.png"
+            },
+            new SummonerSpell
+            {
+                Id = 5,
+                RiotSpellId = 3,
+                Name = "Exhaust",
+                Description = "Exhausts target enemy champion, reducing their Movement Speed and damage dealt.",
+                Cooldown = 210,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerExhaust.png"
+            },
+            new SummonerSpell
+            {
+                Id = 6,
+                RiotSpellId = 7,
+                Name = "Heal",
+                Description = "Restores Health to your champion and target allied champion and grants Movement Speed.",
+                Cooldown = 240,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerHeal.png"
+            },
+            new SummonerSpell
+            {
+                Id = 7,
+                RiotSpellId = 6,
+                Name = "Ghost",
+                Description = "Your champion gains increased Movement Speed and can move through units.",
+                Cooldown = 210,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerHaste.png"
+            },
+            new SummonerSpell
+            {
+                Id = 8,
+                RiotSpellId = 21,
+                Name = "Barrier",
+                Description = "Shields your champion from damage.",
+                Cooldown = 180,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerBarrier.png"
+            },
+            new SummonerSpell
+            {
+                Id = 9,
+                RiotSpellId = 1,
+                Name = "Cleanse",
+                Description = "Removes all disables and summoner spell debuffs affecting your champion.",
+                Cooldown = 210,
+                ImageUrl = "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/SummonerBoost.png"
             }
         );
     }

@@ -1,0 +1,802 @@
+@page "/edit-matchup"
+@page "/edit-matchup/{MatchupId:int}"
+@using MatchupCompanion.Shared.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+@inject IChampionService ChampionService
+@inject IRoleService RoleService
+@inject IMatchupService MatchupService
+@inject IRuneService RuneService
+@inject IItemService ItemService
+@inject ISummonerSpellService SummonerSpellService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<h3>Editar Matchup</h3>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Seleccionar Campeones</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                @* Campo de búsqueda para Tu Campeón *@
+                <div class="col-md-4">
+                    <label class="form-label">Tu Campeón</label>
+                    <div class="position-relative">
+                        <input type="text" class="form-control"
+                               @bind="playerChampionSearch"
+                               @bind:event="oninput"
+                               @onfocus="() => showPlayerDropdown = true"
+                               placeholder="Escribe para buscar..." />
+                        @if (showPlayerDropdown && filteredPlayerChampions.Any())
+                        {
+                            <div class="dropdown-menu show w-100 autocomplete-dropdown">
+                                @foreach (var champion in filteredPlayerChampions.Take(10))
+                                {
+                                    <button type="button" class="dropdown-item"
+                                            @onclick="() => SelectPlayerChampion(champion)">
+                                        @champion.Name
+                                    </button>
+                                }
+                            </div>
+                        }
+                        @if (selectedPlayerChampionId > 0)
+                        {
+                            <small class="text-success">Seleccionado: @GetChampionName(selectedPlayerChampionId)</small>
+                        }
+                    </div>
+                </div>
+
+                @* Campo de búsqueda para Campeón Enemigo *@
+                <div class="col-md-4">
+                    <label class="form-label">Campeón Enemigo</label>
+                    <div class="position-relative">
+                        <input type="text" class="form-control"
+                               @bind="enemyChampionSearch"
+                               @bind:event="oninput"
+                               @onfocus="() => showEnemyDropdown = true"
+                               placeholder="Escribe para buscar..." />
+                        @if (showEnemyDropdown && filteredEnemyChampions.Any())
+                        {
+                            <div class="dropdown-menu show w-100 autocomplete-dropdown">
+                                @foreach (var champion in filteredEnemyChampions.Take(10))
+                                {
+                                    <button type="button" class="dropdown-item"
+                                            @onclick="() => SelectEnemyChampion(champion)">
+                                        @champion.Name
+                                    </button>
+                                }
+                            </div>
+                        }
+                        @if (selectedEnemyChampionId > 0)
+                        {
+                            <small class="text-success">Seleccionado: @GetChampionName(selectedEnemyChampionId)</small>
+                        }
+                    </div>
+                </div>
+
+                @* Dropdown para Rol (pocos elementos, no necesita búsqueda) *@
+                <div class="col-md-4">
+                    <label class="form-label">Rol</label>
+                    <select class="form-select" @bind="selectedRoleId" @bind:after="OnSelectionChanged">
+                        <option value="0">-- Seleccionar --</option>
+                        @foreach (var role in roles)
+                        {
+                            <option value="@role.Id">@role.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            @if (selectedPlayerChampionId > 0 && selectedEnemyChampionId > 0 && selectedRoleId > 0)
+            {
+                <div class="mt-3">
+                    <button class="btn btn-primary" @onclick="LoadOrCreateMatchup" disabled="@isLoadingMatchup">
+                        @if (isLoadingMatchup)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Cargar Matchup
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (currentMatchup != null)
+    {
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    @GetChampionName(currentMatchup.PlayerChampion?.Id ?? selectedPlayerChampionId) vs
+                    @GetChampionName(currentMatchup.EnemyChampion?.Id ?? selectedEnemyChampionId)
+                    <span class="badge bg-secondary ms-2">@GetRoleName(currentMatchup.Role?.Id ?? selectedRoleId)</span>
+                </h5>
+                <span class="badge @GetDifficultyBadgeClass(editModel.Difficulty)">@editModel.Difficulty</span>
+            </div>
+            <div class="card-body">
+                <!-- Dificultad -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Dificultad</label>
+                    <div class="btn-group" role="group">
+                        @foreach (var diff in difficulties)
+                        {
+                            <input type="radio" class="btn-check" name="difficulty" id="diff-@diff"
+                                   value="@diff" checked="@(editModel.Difficulty == diff)"
+                                   @onchange="@(() => editModel.Difficulty = diff)">
+                            <label class="btn @GetDifficultyButtonClass(diff)" for="diff-@diff">@diff</label>
+                        }
+                    </div>
+                </div>
+
+                <!-- Runas -->
+                <div class="mb-4">
+                    <h5>Runas Recomendadas</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">Árbol Primario</div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Árbol</label>
+                                        <select class="form-select" @bind="editModel.PrimaryTreeId" @bind:after="OnPrimaryTreeChanged">
+                                            <option value="">-- Seleccionar --</option>
+                                            @foreach (var tree in runeTrees)
+                                            {
+                                                <option value="@tree.TreeId">@tree.TreeName</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    @if (editModel.PrimaryTreeId.HasValue)
+                                    {
+                                        var primaryTree = runeTrees.FirstOrDefault(t => t.TreeId == editModel.PrimaryTreeId);
+                                        if (primaryTree != null)
+                                        {
+                                            <div class="mb-3">
+                                                <label class="form-label">Keystone</label>
+                                                <select class="form-select" @bind="editModel.KeystoneId">
+                                                    <option value="">-- Seleccionar --</option>
+                                                    @foreach (var rune in primaryTree.Keystones)
+                                                    {
+                                                        <option value="@rune.RiotRuneId">@rune.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Runa Fila 2</label>
+                                                <select class="form-select" @bind="editModel.PrimaryRune1Id">
+                                                    <option value="">-- Seleccionar --</option>
+                                                    @foreach (var rune in primaryTree.Slot1Runes)
+                                                    {
+                                                        <option value="@rune.RiotRuneId">@rune.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Runa Fila 3</label>
+                                                <select class="form-select" @bind="editModel.PrimaryRune2Id">
+                                                    <option value="">-- Seleccionar --</option>
+                                                    @foreach (var rune in primaryTree.Slot2Runes)
+                                                    {
+                                                        <option value="@rune.RiotRuneId">@rune.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Runa Fila 4</label>
+                                                <select class="form-select" @bind="editModel.PrimaryRune3Id">
+                                                    <option value="">-- Seleccionar --</option>
+                                                    @foreach (var rune in primaryTree.Slot3Runes)
+                                                    {
+                                                        <option value="@rune.RiotRuneId">@rune.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">Árbol Secundario</div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Árbol</label>
+                                        <select class="form-select" @bind="editModel.SecondaryTreeId" @bind:after="OnSecondaryTreeChanged">
+                                            <option value="">-- Seleccionar --</option>
+                                            @foreach (var tree in runeTrees.Where(t => t.TreeId != editModel.PrimaryTreeId))
+                                            {
+                                                <option value="@tree.TreeId">@tree.TreeName</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    @if (editModel.SecondaryTreeId.HasValue)
+                                    {
+                                        var secondaryTree = runeTrees.FirstOrDefault(t => t.TreeId == editModel.SecondaryTreeId);
+                                        if (secondaryTree != null)
+                                        {
+                                            var allSecondaryRunes = secondaryTree.Slot1Runes
+                                                .Concat(secondaryTree.Slot2Runes)
+                                                .Concat(secondaryTree.Slot3Runes)
+                                                .ToList();
+                                            <div class="mb-3">
+                                                <label class="form-label">Runa Secundaria 1</label>
+                                                <select class="form-select" @bind="editModel.SecondaryRune1Id">
+                                                    <option value="">-- Seleccionar --</option>
+                                                    @foreach (var rune in allSecondaryRunes)
+                                                    {
+                                                        <option value="@rune.RiotRuneId">@rune.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Runa Secundaria 2</label>
+                                                <select class="form-select" @bind="editModel.SecondaryRune2Id">
+                                                    <option value="">-- Seleccionar --</option>
+                                                    @foreach (var rune in allSecondaryRunes)
+                                                    {
+                                                        <option value="@rune.RiotRuneId">@rune.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items con búsqueda -->
+                <div class="mb-4">
+                    <h5>Items Recomendados</h5>
+                    <p class="text-muted small">Busca items por nombre y haz clic para agregarlos</p>
+
+                    @* Búsqueda de Items *@
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="position-relative">
+                                <input type="text" class="form-control"
+                                       @bind="itemSearch"
+                                       @bind:event="oninput"
+                                       @onfocus="() => showItemDropdown = true"
+                                       placeholder="Buscar item por nombre..." />
+                                @if (showItemDropdown && filteredItems.Any())
+                                {
+                                    <div class="dropdown-menu show w-100 autocomplete-dropdown" style="max-height: 300px; overflow-y: auto;">
+                                        @foreach (var item in filteredItems.Take(15))
+                                        {
+                                            <div class="dropdown-item d-flex justify-content-between align-items-center">
+                                                <span>@item.Name (@item.TotalGold g) <small class="text-muted">ID: @item.RiotItemId</small></span>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary me-1"
+                                                            @onclick="@(() => AddItemToList(item.RiotItemId, "starting"))" title="Inicial">
+                                                        +Ini
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                                                            @onclick="@(() => AddItemToList(item.RiotItemId, "core"))" title="Core">
+                                                        +Core
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-info me-1"
+                                                            @onclick="@(() => AddItemToList(item.RiotItemId, "situational"))" title="Situacional">
+                                                        +Sit
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-success"
+                                                            @onclick="@(() => AddItemToList(item.RiotItemId, "fullbuild"))" title="Full Build">
+                                                        +Full
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Items Iniciales</label>
+                            <input type="text" class="form-control" @bind="editModel.StartingItems"
+                                   placeholder="IDs separados por coma" />
+                            @if (!string.IsNullOrEmpty(editModel.StartingItems))
+                            {
+                                <div class="mt-1">
+                                    @foreach (var itemId in ParseItemIds(editModel.StartingItems))
+                                    {
+                                        var itemName = GetItemName(itemId);
+                                        <span class="badge bg-secondary me-1 mb-1">
+                                            @itemName
+                                            <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
+                                                    @onclick="@(() => RemoveItemFromList(itemId, "starting"))"></button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Items Core</label>
+                            <input type="text" class="form-control" @bind="editModel.CoreItems"
+                                   placeholder="IDs separados por coma" />
+                            @if (!string.IsNullOrEmpty(editModel.CoreItems))
+                            {
+                                <div class="mt-1">
+                                    @foreach (var itemId in ParseItemIds(editModel.CoreItems))
+                                    {
+                                        var itemName = GetItemName(itemId);
+                                        <span class="badge bg-primary me-1 mb-1">
+                                            @itemName
+                                            <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
+                                                    @onclick="@(() => RemoveItemFromList(itemId, "core"))"></button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Items Situacionales</label>
+                            <input type="text" class="form-control" @bind="editModel.SituationalItems"
+                                   placeholder="IDs separados por coma" />
+                            @if (!string.IsNullOrEmpty(editModel.SituationalItems))
+                            {
+                                <div class="mt-1">
+                                    @foreach (var itemId in ParseItemIds(editModel.SituationalItems))
+                                    {
+                                        var itemName = GetItemName(itemId);
+                                        <span class="badge bg-info me-1 mb-1">
+                                            @itemName
+                                            <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
+                                                    @onclick="@(() => RemoveItemFromList(itemId, "situational"))"></button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-12">
+                            <label class="form-label">Full Build (6 items completos)</label>
+                            <input type="text" class="form-control" @bind="editModel.FullBuildItems"
+                                   placeholder="IDs separados por coma" />
+                            @if (!string.IsNullOrEmpty(editModel.FullBuildItems))
+                            {
+                                <div class="mt-1">
+                                    @foreach (var itemId in ParseItemIds(editModel.FullBuildItems))
+                                    {
+                                        var itemName = GetItemName(itemId);
+                                        <span class="badge bg-success me-1 mb-1">
+                                            @itemName
+                                            <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
+                                                    @onclick="@(() => RemoveItemFromList(itemId, "fullbuild"))"></button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hechizos de Invocador -->
+                <div class="mb-4">
+                    <h5>Hechizos de Invocador Recomendados</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Hechizo 1</label>
+                            <select class="form-select" @bind="editModel.SummonerSpell1Id">
+                                <option value="">-- Seleccionar --</option>
+                                @foreach (var spell in summonerSpells)
+                                {
+                                    <option value="@spell.Id">@spell.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Hechizo 2</label>
+                            <select class="form-select" @bind="editModel.SummonerSpell2Id">
+                                <option value="">-- Seleccionar --</option>
+                                @foreach (var spell in summonerSpells)
+                                {
+                                    <option value="@spell.Id">@spell.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orden de Habilidades -->
+                <div class="mb-4">
+                    <h5>Orden de Habilidades</h5>
+                    <p class="text-muted small">Ingresa el orden para niveles 1-18 (ej: Q,W,E,Q,Q,R,Q,W,Q,W,R,W,W,E,E,R,E,E)</p>
+                    <input type="text" class="form-control" @bind="editModel.AbilityOrder"
+                           placeholder="Q,W,E,Q,Q,R,Q,W,Q,W,R,W,W,E,E,R,E,E" />
+                    <small class="text-muted">Separar por comas. Q, W, E para habilidades básicas, R para ultimate</small>
+                </div>
+
+                <!-- Estrategia -->
+                <div class="mb-4">
+                    <h5>Estrategia</h5>
+                    <textarea class="form-control" rows="8" @bind="editModel.Strategy"
+                              placeholder="Describe la estrategia para este matchup: cómo tradear, power spikes, qué evitar, consejos de laning, etc."></textarea>
+                    <small class="text-muted">@((editModel.Strategy?.Length ?? 0))/5000 caracteres</small>
+                </div>
+
+                <!-- Consejo General -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Consejo General (Resumen)</label>
+                    <textarea class="form-control" rows="3" @bind="editModel.GeneralAdvice"
+                              placeholder="Un resumen breve del matchup"></textarea>
+                    <small class="text-muted">@((editModel.GeneralAdvice?.Length ?? 0))/1000 caracteres</small>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-outline-secondary" @onclick="Cancel">Cancelar</button>
+                    <button class="btn btn-success" @onclick="SaveMatchup" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Guardar Cambios
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mt-3">@errorMessage</div>
+                }
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success mt-3">@successMessage</div>
+                }
+            </div>
+        </div>
+    }
+}
+
+<style>
+    .autocomplete-dropdown {
+        position: absolute;
+        z-index: 1000;
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .autocomplete-dropdown .dropdown-item:hover {
+        background-color: #e9ecef;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int? MatchupId { get; set; }
+
+    private List<ChampionDto> champions = new();
+    private List<RoleDto> roles = new();
+    private List<RuneTreeDto> runeTrees = new();
+    private List<ItemDto> items = new();
+    private List<SummonerSpellDto> summonerSpells = new();
+
+    private int selectedPlayerChampionId;
+    private int selectedEnemyChampionId;
+    private int selectedRoleId;
+
+    // Campos de búsqueda
+    private string playerChampionSearch = "";
+    private string enemyChampionSearch = "";
+    private string itemSearch = "";
+
+    // Control de dropdowns
+    private bool showPlayerDropdown = false;
+    private bool showEnemyDropdown = false;
+    private bool showItemDropdown = false;
+
+    private MatchupDto? currentMatchup;
+    private UpdateMatchupDto editModel = new() { Difficulty = "Medium" };
+
+    private bool isLoading = true;
+    private bool isLoadingMatchup = false;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    private readonly string[] difficulties = { "Easy", "Medium", "Hard", "Extreme" };
+
+    // Propiedades computadas para filtrar
+    private IEnumerable<ChampionDto> filteredPlayerChampions =>
+        string.IsNullOrWhiteSpace(playerChampionSearch)
+            ? Enumerable.Empty<ChampionDto>()
+            : champions.Where(c => c.Name.Contains(playerChampionSearch, StringComparison.OrdinalIgnoreCase))
+                       .OrderBy(c => c.Name);
+
+    private IEnumerable<ChampionDto> filteredEnemyChampions =>
+        string.IsNullOrWhiteSpace(enemyChampionSearch)
+            ? Enumerable.Empty<ChampionDto>()
+            : champions.Where(c => c.Name.Contains(enemyChampionSearch, StringComparison.OrdinalIgnoreCase))
+                       .OrderBy(c => c.Name);
+
+    private IEnumerable<ItemDto> filteredItems =>
+        string.IsNullOrWhiteSpace(itemSearch)
+            ? Enumerable.Empty<ItemDto>()
+            : items.Where(i => i.Name.Contains(itemSearch, StringComparison.OrdinalIgnoreCase) && i.IsPurchasable)
+                   .OrderBy(i => i.Name);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var championsTask = ChampionService.GetAllChampionsAsync();
+            var rolesTask = RoleService.GetAllRolesAsync();
+            var runeTreesTask = RuneService.GetRuneTreesAsync();
+            var itemsTask = ItemService.GetAllItemsAsync();
+            var summonerSpellsTask = SummonerSpellService.GetAllSummonerSpellsAsync();
+
+            await Task.WhenAll(championsTask, rolesTask, runeTreesTask, itemsTask, summonerSpellsTask);
+
+            champions = await championsTask;
+            roles = await rolesTask;
+            runeTrees = await runeTreesTask;
+            items = await itemsTask;
+            summonerSpells = await summonerSpellsTask;
+
+            if (MatchupId.HasValue)
+            {
+                var matchup = await MatchupService.GetMatchupByIdAsync(MatchupId.Value);
+                if (matchup != null)
+                {
+                    currentMatchup = matchup;
+                    selectedPlayerChampionId = matchup.PlayerChampion?.Id ?? 0;
+                    selectedEnemyChampionId = matchup.EnemyChampion?.Id ?? 0;
+                    selectedRoleId = matchup.Role?.Id ?? 0;
+                    playerChampionSearch = matchup.PlayerChampion?.Name ?? "";
+                    enemyChampionSearch = matchup.EnemyChampion?.Name ?? "";
+                    LoadEditModelFromMatchup(matchup);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar datos: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SelectPlayerChampion(ChampionDto champion)
+    {
+        selectedPlayerChampionId = champion.Id;
+        playerChampionSearch = champion.Name;
+        showPlayerDropdown = false;
+        OnSelectionChanged();
+    }
+
+    private void SelectEnemyChampion(ChampionDto champion)
+    {
+        selectedEnemyChampionId = champion.Id;
+        enemyChampionSearch = champion.Name;
+        showEnemyDropdown = false;
+        OnSelectionChanged();
+    }
+
+    private void OnSelectionChanged()
+    {
+        currentMatchup = null;
+        editModel = new() { Difficulty = "Medium" };
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private void OnPrimaryTreeChanged()
+    {
+        editModel.KeystoneId = null;
+        editModel.PrimaryRune1Id = null;
+        editModel.PrimaryRune2Id = null;
+        editModel.PrimaryRune3Id = null;
+    }
+
+    private void OnSecondaryTreeChanged()
+    {
+        editModel.SecondaryRune1Id = null;
+        editModel.SecondaryRune2Id = null;
+    }
+
+    private async Task LoadOrCreateMatchup()
+    {
+        if (selectedPlayerChampionId == 0 || selectedEnemyChampionId == 0 || selectedRoleId == 0)
+            return;
+
+        isLoadingMatchup = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            currentMatchup = await MatchupService.FindOrCreateMatchupAsync(
+                selectedPlayerChampionId, selectedEnemyChampionId, selectedRoleId);
+
+            if (currentMatchup != null)
+            {
+                LoadEditModelFromMatchup(currentMatchup);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar matchup: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingMatchup = false;
+        }
+    }
+
+    private void LoadEditModelFromMatchup(MatchupDto matchup)
+    {
+        editModel = new UpdateMatchupDto
+        {
+            Difficulty = matchup.Difficulty,
+            GeneralAdvice = matchup.GeneralAdvice,
+            PrimaryTreeId = matchup.PrimaryTreeId,
+            KeystoneId = matchup.KeystoneId,
+            PrimaryRune1Id = matchup.PrimaryRune1Id,
+            PrimaryRune2Id = matchup.PrimaryRune2Id,
+            PrimaryRune3Id = matchup.PrimaryRune3Id,
+            SecondaryTreeId = matchup.SecondaryTreeId,
+            SecondaryRune1Id = matchup.SecondaryRune1Id,
+            SecondaryRune2Id = matchup.SecondaryRune2Id,
+            StatShards = matchup.StatShards,
+            StartingItems = matchup.StartingItems,
+            CoreItems = matchup.CoreItems,
+            SituationalItems = matchup.SituationalItems,
+            FullBuildItems = matchup.FullBuildItems,
+            SummonerSpell1Id = matchup.SummonerSpell1Id,
+            SummonerSpell2Id = matchup.SummonerSpell2Id,
+            AbilityOrder = matchup.AbilityOrder,
+            Strategy = matchup.Strategy
+        };
+    }
+
+    private async Task SaveMatchup()
+    {
+        if (currentMatchup == null) return;
+
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var updatedMatchup = await MatchupService.UpdateMatchupAsync(currentMatchup.Id, editModel);
+            if (updatedMatchup != null)
+            {
+                currentMatchup = updatedMatchup;
+                successMessage = "Matchup guardado exitosamente!";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al guardar: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/matchups");
+    }
+
+    // Métodos para manejar items
+    private void AddItemToList(int itemId, string listType)
+    {
+        var currentList = listType switch
+        {
+            "starting" => editModel.StartingItems,
+            "core" => editModel.CoreItems,
+            "situational" => editModel.SituationalItems,
+            "fullbuild" => editModel.FullBuildItems,
+            _ => ""
+        };
+
+        var ids = ParseItemIds(currentList ?? "").ToList();
+        if (!ids.Contains(itemId))
+        {
+            ids.Add(itemId);
+            var newValue = string.Join(",", ids);
+
+            switch (listType)
+            {
+                case "starting": editModel.StartingItems = newValue; break;
+                case "core": editModel.CoreItems = newValue; break;
+                case "situational": editModel.SituationalItems = newValue; break;
+                case "fullbuild": editModel.FullBuildItems = newValue; break;
+            }
+        }
+
+        itemSearch = "";
+        showItemDropdown = false;
+    }
+
+    private void RemoveItemFromList(int itemId, string listType)
+    {
+        var currentList = listType switch
+        {
+            "starting" => editModel.StartingItems,
+            "core" => editModel.CoreItems,
+            "situational" => editModel.SituationalItems,
+            "fullbuild" => editModel.FullBuildItems,
+            _ => ""
+        };
+
+        var ids = ParseItemIds(currentList ?? "").Where(id => id != itemId).ToList();
+        var newValue = ids.Any() ? string.Join(",", ids) : null;
+
+        switch (listType)
+        {
+            case "starting": editModel.StartingItems = newValue; break;
+            case "core": editModel.CoreItems = newValue; break;
+            case "situational": editModel.SituationalItems = newValue; break;
+            case "fullbuild": editModel.FullBuildItems = newValue; break;
+        }
+    }
+
+    private IEnumerable<int> ParseItemIds(string itemString)
+    {
+        if (string.IsNullOrWhiteSpace(itemString))
+            return Enumerable.Empty<int>();
+
+        return itemString.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => int.TryParse(s.Trim(), out var id) ? id : 0)
+                        .Where(id => id > 0);
+    }
+
+    private string GetItemName(int itemId)
+    {
+        return items.FirstOrDefault(i => i.RiotItemId == itemId)?.Name ?? $"Item {itemId}";
+    }
+
+    private string GetChampionName(int? championId)
+    {
+        if (!championId.HasValue) return "???";
+        return champions.FirstOrDefault(c => c.Id == championId)?.Name ?? "???";
+    }
+
+    private string GetRoleName(int? roleId)
+    {
+        if (!roleId.HasValue) return "???";
+        return roles.FirstOrDefault(r => r.Id == roleId)?.Name ?? "???";
+    }
+
+    private string GetDifficultyBadgeClass(string difficulty) => difficulty switch
+    {
+        "Easy" => "bg-success",
+        "Medium" => "bg-warning text-dark",
+        "Hard" => "bg-danger",
+        "Extreme" => "bg-dark",
+        _ => "bg-secondary"
+    };
+
+    private string GetDifficultyButtonClass(string difficulty) => difficulty switch
+    {
+        "Easy" => "btn-outline-success",
+        "Medium" => "btn-outline-warning",
+        "Hard" => "btn-outline-danger",
+        "Extreme" => "btn-outline-dark",
+        _ => "btn-outline-secondary"
+    };
+}

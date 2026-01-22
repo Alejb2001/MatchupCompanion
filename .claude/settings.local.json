@@ -10,7 +10,9 @@
       "Bash(test:*)",
       "Bash(dotnet ef migrations:*)",
       "Bash(dotnet tool install:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(dotnet ef database update:*)",
+      "Bash(dir:*)"
     ]
   }
 }

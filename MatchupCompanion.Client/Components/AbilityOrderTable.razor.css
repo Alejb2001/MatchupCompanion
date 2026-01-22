@@ -1,0 +1,178 @@
+.ability-order-table-container {
+    overflow-x: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.ability-order-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ability-order-table thead th {
+    background-color: #6c757d;
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    padding: 0.5rem 0.3rem;
+    border: 1px solid #5a6268;
+    font-size: 0.85rem;
+}
+
+.ability-header {
+    min-width: 80px;
+    width: 80px;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background-color: #6c757d !important;
+}
+
+.level-header {
+    min-width: 40px;
+    width: 40px;
+}
+
+.ability-row {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.ability-icon-cell {
+    text-align: center;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    min-width: 80px;
+    width: 80px;
+}
+
+.ability-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    border: 2px solid #495057;
+    display: block;
+    margin: 0 auto;
+    transition: transform 0.2s;
+}
+
+.ability-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ability-letter {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: white;
+    margin: 0 auto;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.ability-letter-q {
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+}
+
+.ability-letter-w {
+    background: linear-gradient(135deg, #198754, #146c43);
+}
+
+.ability-letter-e {
+    background: linear-gradient(135deg, #0dcaf0, #0a9ec7);
+}
+
+.ability-letter-r {
+    background: linear-gradient(135deg, #dc3545, #b02a37);
+}
+
+.level-cell {
+    text-align: center;
+    padding: 0.5rem 0.3rem;
+    border: 1px solid #dee2e6;
+    background-color: #fff;
+    transition: background-color 0.2s;
+    min-width: 40px;
+    width: 40px;
+}
+
+.level-cell.selected {
+    font-weight: bold;
+    color: white;
+    position: relative;
+}
+
+.selected-q {
+    background-color: #0d6efd;
+    border-color: #0a58ca;
+}
+
+.selected-w {
+    background-color: #198754;
+    border-color: #146c43;
+}
+
+.selected-e {
+    background-color: #0dcaf0;
+    border-color: #0a9ec7;
+}
+
+.selected-r {
+    background-color: #dc3545;
+    border-color: #b02a37;
+}
+
+.ability-marker {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* Efectos hover para celdas */
+.level-cell:hover:not(.selected) {
+    background-color: #f8f9fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ability-order-table {
+        font-size: 0.75rem;
+    }
+
+    .level-header {
+        min-width: 32px;
+        width: 32px;
+        padding: 0.3rem 0.2rem;
+    }
+
+    .level-cell {
+        min-width: 32px;
+        width: 32px;
+        padding: 0.3rem 0.2rem;
+    }
+
+    .ability-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .ability-letter {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .ability-marker {
+        font-size: 0.75rem;
+    }
+}

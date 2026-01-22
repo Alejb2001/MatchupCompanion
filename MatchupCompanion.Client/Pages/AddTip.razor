@@ -1,6 +1,8 @@
 @page "/add-tip/{matchupId:int}"
 @using MatchupCompanion.Shared.Models
 @using MatchupCompanion.Client.Services
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IMatchupService MatchupService
 @inject NavigationManager Navigation
 

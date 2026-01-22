@@ -39,8 +39,131 @@ public class Matchup
     [MaxLength(1000)]
     public string? GeneralAdvice { get; set; }
 
+    // ============================================
+    // RUNAS RECOMENDADAS
+    // ============================================
+
+    /// <summary>
+    /// ID del árbol primario de runas (8100=Domination, 8000=Precision, 8200=Sorcery, 8400=Resolve, 8300=Inspiration)
+    /// </summary>
+    public int? PrimaryTreeId { get; set; }
+
+    /// <summary>
+    /// ID de la runa Keystone (primera fila del árbol primario)
+    /// </summary>
+    public int? KeystoneId { get; set; }
+
+    /// <summary>
+    /// ID de la runa de la segunda fila del árbol primario
+    /// </summary>
+    public int? PrimaryRune1Id { get; set; }
+
+    /// <summary>
+    /// ID de la runa de la tercera fila del árbol primario
+    /// </summary>
+    public int? PrimaryRune2Id { get; set; }
+
+    /// <summary>
+    /// ID de la runa de la cuarta fila del árbol primario
+    /// </summary>
+    public int? PrimaryRune3Id { get; set; }
+
+    /// <summary>
+    /// ID del árbol secundario de runas
+    /// </summary>
+    public int? SecondaryTreeId { get; set; }
+
+    /// <summary>
+    /// ID de la primera runa del árbol secundario
+    /// </summary>
+    public int? SecondaryRune1Id { get; set; }
+
+    /// <summary>
+    /// ID de la segunda runa del árbol secundario
+    /// </summary>
+    public int? SecondaryRune2Id { get; set; }
+
+    /// <summary>
+    /// Stat shards seleccionados (formato: "Adaptive,Adaptive,Health")
+    /// </summary>
+    [MaxLength(100)]
+    public string? StatShards { get; set; }
+
+    // ============================================
+    // ITEMS RECOMENDADOS
+    // ============================================
+
+    /// <summary>
+    /// IDs de items iniciales separados por coma (ej: "1055,2003,2003")
+    /// </summary>
+    [MaxLength(200)]
+    public string? StartingItems { get; set; }
+
+    /// <summary>
+    /// IDs de items core separados por coma (ej: "3116,3157,3089")
+    /// </summary>
+    [MaxLength(200)]
+    public string? CoreItems { get; set; }
+
+    /// <summary>
+    /// IDs de items situacionales separados por coma
+    /// </summary>
+    [MaxLength(200)]
+    public string? SituationalItems { get; set; }
+
+    /// <summary>
+    /// IDs de items para full build separados por coma (6 items completos)
+    /// </summary>
+    [MaxLength(200)]
+    public string? FullBuildItems { get; set; }
+
+    // ============================================
+    // HECHIZOS DE INVOCADOR
+    // ============================================
+
+    /// <summary>
+    /// ID del primer hechizo de invocador recomendado
+    /// </summary>
+    public int? SummonerSpell1Id { get; set; }
+
+    /// <summary>
+    /// ID del segundo hechizo de invocador recomendado
+    /// </summary>
+    public int? SummonerSpell2Id { get; set; }
+
+    // ============================================
+    // ORDEN DE HABILIDADES
+    // ============================================
+
+    /// <summary>
+    /// Orden de habilidades recomendado (ej: "Q,W,E,Q,Q,R,Q,W,Q,W,R,W,W,E,E,R,E,E")
+    /// Niveles 1-18 separados por coma
+    /// </summary>
+    [MaxLength(100)]
+    public string? AbilityOrder { get; set; }
+
+    // ============================================
+    // ESTRATEGIA
+    // ============================================
+
+    /// <summary>
+    /// Estrategia detallada para el matchup (consejos de laning, power spikes, etc.)
+    /// </summary>
+    [MaxLength(5000)]
+    public string? Strategy { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // ============================================
+    // CREADOR DEL MATCHUP
+    // ============================================
+
+    /// <summary>
+    /// ID del usuario que creó este matchup (nullable para retrocompatibilidad)
+    /// </summary>
+    public string? CreatedById { get; set; }
+    public ApplicationUser? CreatedBy { get; set; }
 
     // Relaciones
     public ICollection<MatchupTip> Tips { get; set; } = new List<MatchupTip>();

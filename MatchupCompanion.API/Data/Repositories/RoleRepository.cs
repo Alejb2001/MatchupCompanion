@@ -18,19 +18,19 @@ public class RoleRepository : IRoleRepository
 
     public async Task<IEnumerable<Role>> GetAllAsync()
     {
-        return await _context.Roles
+        return await _context.GameRoles
             .OrderBy(r => r.Name)
             .ToListAsync();
     }
 
     public async Task<Role?> GetByIdAsync(int id)
     {
-        return await _context.Roles.FindAsync(id);
+        return await _context.GameRoles.FindAsync(id);
     }
 
     public async Task<Role?> GetByNameAsync(string name)
     {
-        return await _context.Roles
+        return await _context.GameRoles
             .FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower());
     }
 }
