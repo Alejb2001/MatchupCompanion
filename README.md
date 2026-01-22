@@ -232,6 +232,8 @@ This project is provided for educational and portfolio purposes.
 - **Microsoft** for .NET and Blazor
 - **Bootstrap** for UI components
 
+> **Estado Actual**: Backend funcional con sincronización de campeones desde Data Dragon de Riot Games. Base de datos SQL Server LocalDB configurada con 172 campeones sincronizados.
+
 ---
 
 **Note**: This project is not endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing League of Legends.

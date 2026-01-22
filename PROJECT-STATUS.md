@@ -452,6 +452,11 @@ JOIN Roles r ON m.RoleId = r.Id;
    - Solución: Renombrar DbSet a `GameRoles` y tabla a `GameRoles` en OnModelCreating
    - Ubicación: `ApplicationDbContext.cs`, `RoleRepository.cs`
 
+4. **Variable Duplicada en MatchupsList** (16/01/2026)
+   - Problema: `error CS0102: El tipo 'MatchupsList' ya contiene una definición para 'filterText'`
+   - Solución: Remover declaración simple en línea 99, mantener propiedad con backing field
+   - Ubicación: `MatchupsList.razor:99`
+
 ### Configuración de Puertos
 
 **HTTP**: 5007
