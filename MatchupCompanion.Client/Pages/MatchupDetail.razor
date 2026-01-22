@@ -199,9 +199,19 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach (var item in startingItems)
                                         {
-                                            <span class="badge bg-secondary p-2">
-                                                @item.Name (@item.TotalGold g)
-                                            </span>
+                                            <div class="text-center" title="@item.Name - @item.TotalGold g">
+                                                @if (!string.IsNullOrEmpty(item.IconUrl))
+                                                {
+                                                    <img src="@item.IconUrl" alt="@item.Name"
+                                                         style="width: 40px; height: 40px; border-radius: 4px; border: 2px solid #6c757d;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary p-2">
+                                                        @item.Name
+                                                    </span>
+                                                }
+                                            </div>
                                         }
                                     </div>
                                 </div>
@@ -213,9 +223,19 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach (var item in coreItems)
                                         {
-                                            <span class="badge bg-primary p-2">
-                                                @item.Name (@item.TotalGold g)
-                                            </span>
+                                            <div class="text-center" title="@item.Name - @item.TotalGold g">
+                                                @if (!string.IsNullOrEmpty(item.IconUrl))
+                                                {
+                                                    <img src="@item.IconUrl" alt="@item.Name"
+                                                         style="width: 48px; height: 48px; border-radius: 4px; border: 2px solid #0d6efd;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-primary p-2">
+                                                        @item.Name
+                                                    </span>
+                                                }
+                                            </div>
                                         }
                                     </div>
                                 </div>
@@ -227,9 +247,19 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach (var item in situationalItems)
                                         {
-                                            <span class="badge bg-info p-2">
-                                                @item.Name (@item.TotalGold g)
-                                            </span>
+                                            <div class="text-center" title="@item.Name - @item.TotalGold g">
+                                                @if (!string.IsNullOrEmpty(item.IconUrl))
+                                                {
+                                                    <img src="@item.IconUrl" alt="@item.Name"
+                                                         style="width: 48px; height: 48px; border-radius: 4px; border: 2px solid #0dcaf0;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-info p-2">
+                                                        @item.Name
+                                                    </span>
+                                                }
+                                            </div>
                                         }
                                     </div>
                                 </div>

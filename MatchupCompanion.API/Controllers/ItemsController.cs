@@ -15,13 +15,39 @@ public class ItemsController : ControllerBase
 {
     private readonly IItemRepository _itemRepository;
     private readonly ILogger<ItemsController> _logger;
+    private readonly HttpClient _httpClient;
     private const string DataDragonBaseUrl = "https://ddragon.leagueoflegends.com";
-    private const string CurrentVersion = "14.24.1"; // TODO: Obtener dinámicamente
+    private static string? _cachedVersion;
+    private static DateTime _versionCacheExpiry = DateTime.MinValue;
 
-    public ItemsController(IItemRepository itemRepository, ILogger<ItemsController> logger)
+    public ItemsController(IItemRepository itemRepository, ILogger<ItemsController> logger, IHttpClientFactory httpClientFactory)
     {
         _itemRepository = itemRepository;
         _logger = logger;
+        _httpClient = httpClientFactory.CreateClient();
+    }
+
+    private async Task<string> GetCurrentVersionAsync()
+    {
+        if (_cachedVersion != null && DateTime.UtcNow < _versionCacheExpiry)
+            return _cachedVersion;
+
+        try
+        {
+            var response = await _httpClient.GetAsync($"{DataDragonBaseUrl}/api/versions.json");
+            response.EnsureSuccessStatusCode();
+            var versions = await response.Content.ReadFromJsonAsync<List<string>>();
+            _cachedVersion = versions?.FirstOrDefault() ?? "14.24.1";
+            _versionCacheExpiry = DateTime.UtcNow.AddHours(6);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener la versión de Data Dragon");
+            _cachedVersion ??= "14.24.1";
+            _versionCacheExpiry = DateTime.UtcNow.AddMinutes(5);
+        }
+
+        return _cachedVersion;
     }
 
     /// <summary>
@@ -31,8 +57,9 @@ public class ItemsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllItems()
     {
+        var version = await GetCurrentVersionAsync();
         var items = await _itemRepository.GetAllAsync();
-        var itemDtos = items.Select(MapToDto).ToList();
+        var itemDtos = items.Select(i => MapToDto(i, version)).ToList();
         return Ok(itemDtos);
     }
 
@@ -48,7 +75,8 @@ public class ItemsController : ControllerBase
         if (item == null)
             return NotFound(new { message = $"Item con ID {id} no encontrado" });
 
-        return Ok(MapToDto(item));
+        var version = await GetCurrentVersionAsync();
+        return Ok(MapToDto(item, version));
     }
 
     /// <summary>
@@ -63,7 +91,8 @@ public class ItemsController : ControllerBase
         if (item == null)
             return NotFound(new { message = $"Item con Riot ID {riotItemId} no encontrado" });
 
-        return Ok(MapToDto(item));
+        var version = await GetCurrentVersionAsync();
+        return Ok(MapToDto(item, version));
     }
 
     /// <summary>
@@ -73,8 +102,9 @@ public class ItemsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCompletedItems()
     {
+        var version = await GetCurrentVersionAsync();
         var items = await _itemRepository.GetCompletedItemsAsync();
-        var itemDtos = items.Select(MapToDto).ToList();
+        var itemDtos = items.Select(i => MapToDto(i, version)).ToList();
         return Ok(itemDtos);
     }
 
@@ -88,8 +118,9 @@ public class ItemsController : ControllerBase
         if (string.IsNullOrWhiteSpace(q))
             return Ok(new List<ItemDto>());
 
+        var version = await GetCurrentVersionAsync();
         var items = await _itemRepository.SearchByNameAsync(q);
-        var itemDtos = items.Select(MapToDto).ToList();
+        var itemDtos = items.Select(i => MapToDto(i, version)).ToList();
         return Ok(itemDtos);
     }
 
@@ -103,24 +134,30 @@ public class ItemsController : ControllerBase
         if (string.IsNullOrWhiteSpace(ids))
             return Ok(new List<ItemDto>());
 
+        var version = await GetCurrentVersionAsync();
         var riotIds = ids.Split(',')
             .Select(id => int.TryParse(id.Trim(), out int parsed) ? parsed : (int?)null)
             .Where(id => id.HasValue)
             .Select(id => id!.Value)
             .ToList();
 
+        // Cache de items ya consultados para evitar queries repetidas
+        var itemCache = new Dictionary<int, Models.Entities.Item?>();
         var items = new List<ItemDto>();
         foreach (var riotId in riotIds)
         {
-            var item = await _itemRepository.GetByRiotIdAsync(riotId);
+            if (!itemCache.ContainsKey(riotId))
+                itemCache[riotId] = await _itemRepository.GetByRiotIdAsync(riotId);
+
+            var item = itemCache[riotId];
             if (item != null)
-                items.Add(MapToDto(item));
+                items.Add(MapToDto(item, version));
         }
 
         return Ok(items);
     }
 
-    private ItemDto MapToDto(Models.Entities.Item item)
+    private ItemDto MapToDto(Models.Entities.Item item, string version)
     {
         List<string>? tags = null;
         if (!string.IsNullOrEmpty(item.Tags))
@@ -143,7 +180,7 @@ public class ItemsController : ControllerBase
             Description = item.Description,
             IconPath = item.IconPath,
             IconUrl = !string.IsNullOrEmpty(item.IconPath)
-                ? $"{DataDragonBaseUrl}/cdn/{CurrentVersion}/img/item/{item.IconPath}"
+                ? $"{DataDragonBaseUrl}/cdn/{version}/img/item/{item.IconPath}"
                 : null,
             TotalGold = item.TotalGold,
             Tags = tags,

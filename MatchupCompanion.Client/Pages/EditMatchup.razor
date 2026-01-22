@@ -714,18 +714,15 @@ else
         };
 
         var ids = ParseItemIds(currentList ?? "").ToList();
-        if (!ids.Contains(itemId))
-        {
-            ids.Add(itemId);
-            var newValue = string.Join(",", ids);
+        ids.Add(itemId);
+        var newValue = string.Join(",", ids);
 
-            switch (listType)
-            {
-                case "starting": editModel.StartingItems = newValue; break;
-                case "core": editModel.CoreItems = newValue; break;
-                case "situational": editModel.SituationalItems = newValue; break;
-                case "fullbuild": editModel.FullBuildItems = newValue; break;
-            }
+        switch (listType)
+        {
+            case "starting": editModel.StartingItems = newValue; break;
+            case "core": editModel.CoreItems = newValue; break;
+            case "situational": editModel.SituationalItems = newValue; break;
+            case "fullbuild": editModel.FullBuildItems = newValue; break;
         }
 
         itemSearch = "";
@@ -743,7 +740,10 @@ else
             _ => ""
         };
 
-        var ids = ParseItemIds(currentList ?? "").Where(id => id != itemId).ToList();
+        var ids = ParseItemIds(currentList ?? "").ToList();
+        var indexToRemove = ids.IndexOf(itemId);
+        if (indexToRemove >= 0)
+            ids.RemoveAt(indexToRemove);
         var newValue = ids.Any() ? string.Join(",", ids) : null;
 
         switch (listType)
