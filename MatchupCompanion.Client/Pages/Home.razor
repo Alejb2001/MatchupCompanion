@@ -10,52 +10,69 @@
 <div class="container mt-5">
     <div class="row">
         <div class="col-lg-12">
-            <div class="jumbotron bg-light p-5 rounded">
-                <h1 class="display-4">Bienvenido a Matchup Companion</h1>
-                <p class="lead">Tu guía definitiva para dominar los matchups de League of Legends</p>
-                <hr class="my-4" />
-                <p>
-                    Matchup Companion es una aplicación que te ayuda a entender y ganar tus partidas de League of Legends
-                    proporcionándote información detallada sobre matchups específicos entre campeones.
-                </p>
+            <div class="card border-0 shadow-lg mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="card-body p-5">
+                    <h1 class="display-4 fw-bold mb-3">Bienvenido a Matchup Companion</h1>
+                    <p class="lead mb-4">Tu guía definitiva para dominar los matchups de League of Legends</p>
+                    <hr class="my-4 border-white opacity-25" />
+                    <p class="mb-0">
+                        Matchup Companion es una aplicación que te ayuda a entender y ganar tus partidas de League of Legends
+                        proporcionándote información detallada sobre matchups específicos entre campeones.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="row mt-4">
         <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Buscar Matchups</h5>
-                    <p class="card-text">
+            <div class="card mb-4 border-0 shadow-sm h-100" style="transition: transform 0.2s;">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-search h1 text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Buscar Matchups</h5>
+                    <p class="card-text flex-grow-1">
                         Encuentra información específica sobre cómo jugar un matchup seleccionando tu campeón,
                         el campeón enemigo y el rol.
                     </p>
-                    <a href="/matchup-search" class="btn btn-primary">Buscar Matchup</a>
+                    <a href="/matchup-search" class="btn btn-primary rounded-pill">
+                        <i class="bi bi-search me-2"></i>Buscar Matchup
+                    </a>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Ver Todos los Matchups</h5>
-                    <p class="card-text">
+            <div class="card mb-4 border-0 shadow-sm h-100" style="transition: transform 0.2s;">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-list-ul h1 text-success"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Ver Todos los Matchups</h5>
+                    <p class="card-text flex-grow-1">
                         Explora todos los matchups disponibles en nuestra base de datos y descubre nuevas estrategias.
                     </p>
-                    <a href="/matchups" class="btn btn-primary">Ver Matchups</a>
+                    <a href="/matchups" class="btn btn-success rounded-pill">
+                        <i class="bi bi-list-ul me-2"></i>Ver Matchups
+                    </a>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Crear Matchup</h5>
-                    <p class="card-text">
+            <div class="card mb-4 border-0 shadow-sm h-100" style="transition: transform 0.2s;">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-plus-circle h1 text-info"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Crear Matchup</h5>
+                    <p class="card-text flex-grow-1">
                         Comparte tu conocimiento creando un nuevo matchup con consejos y estrategias para la comunidad.
                     </p>
-                    <a href="/create-matchup" class="btn btn-primary">Crear Matchup</a>
+                    <a href="/create-matchup" class="btn btn-info rounded-pill text-white">
+                        <i class="bi bi-plus-circle me-2"></i>Crear Matchup
+                    </a>
                 </div>
             </div>
         </div>
@@ -64,17 +81,21 @@
     <!-- Sección de Campeones Favoritos -->
     @if (favoriteChampions.Any())
     {
-        <div class="row mt-4">
+        <div class="row mt-5">
             <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Mis Campeones Favoritos</h5>
-                            <button class="btn btn-sm btn-outline-primary" @onclick="ToggleManageFavorites">
-                                @(showManageFavorites ? "Ocultar Gestión" : "Gestionar Favoritos")
+                            <div>
+                                <h5 class="card-title mb-1 fw-bold">
+                                    <i class="bi bi-star-fill text-warning me-2"></i>Mis Campeones Favoritos
+                                </h5>
+                                <p class="text-muted mb-0 small">Haz clic en un campeón para ver sus matchups</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill" @onclick="ToggleManageFavorites">
+                                <i class="bi bi-gear me-2"></i>@(showManageFavorites ? "Ocultar Gestión" : "Gestionar Favoritos")
                             </button>
                         </div>
-                        <p class="text-muted">Haz clic en un campeón para ver sus matchups</p>
 
                         <div class="row">
                             @foreach (var champion in favoriteChampions)
@@ -114,11 +135,13 @@
     <!-- Sección para Gestionar Favoritos -->
     @if (showManageFavorites || !favoriteChampions.Any())
     {
-        <div class="row mt-4">
+        <div class="row mt-5">
             <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Agregar Campeones Favoritos</h5>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold">
+                            <i class="bi bi-plus-circle me-2"></i>Agregar Campeones Favoritos
+                        </h5>
                         <p class="text-muted">Selecciona tus campeones favoritos para acceso rápido</p>
 
                         @if (isLoadingAllChampions)
@@ -175,19 +198,29 @@
         </div>
     }
 
-    <div class="row mt-4">
+    <div class="row mt-5">
         <div class="col-lg-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Características</h5>
-                    <ul>
-                        <li>Base de datos completa de campeones de League of Legends</li>
-                        <li>Matchups organizados por roles (Top, Jungle, Mid, ADC, Support)</li>
-                        <li>Consejos específicos por fase del juego (Early, Mid, Late)</li>
-                        <li>Recomendaciones de items, runas y habilidades</li>
-                        <li>Dificultad del matchup claramente indicada</li>
-                        <li>Contribuciones de la comunidad</li>
-                    </ul>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-bold mb-4">
+                        <i class="bi bi-award me-2 text-primary"></i>Características
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Base de datos completa de campeones de League of Legends</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Matchups organizados por roles (Top, Jungle, Mid, ADC, Support)</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Consejos específicos por fase del juego (Early, Mid, Late)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Recomendaciones de items, runas y habilidades</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Dificultad del matchup claramente indicada</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Contribuciones de la comunidad</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -196,12 +229,24 @@
 
 <style>
     .champion-card {
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid transparent;
     }
 
     .champion-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transform: translateY(-8px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        border-color: #0d6efd;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
     }
 </style>
 
