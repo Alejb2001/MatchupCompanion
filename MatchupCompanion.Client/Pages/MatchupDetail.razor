@@ -159,64 +159,23 @@
                         <div class="card-header bg-info text-white">
                             <h4 class="mb-0">Runas Recomendadas</h4>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                @* Runas Primarias *@
-                                <div class="col-md-6">
-                                    <h5>Árbol Primario</h5>
-                                    @if (primaryTree != null)
-                                    {
-                                        <p class="text-muted mb-2">@primaryTree.TreeName</p>
-                                    }
-                                    <ul class="list-unstyled">
-                                        @if (keystoneRune != null)
-                                        {
-                                            <li class="mb-2">
-                                                <strong>Keystone:</strong> @keystoneRune.Name
-                                                @if (!string.IsNullOrEmpty(keystoneRune.ShortDescription))
-                                                {
-                                                    <small class="text-muted d-block">@keystoneRune.ShortDescription</small>
-                                                }
-                                            </li>
-                                        }
-                                        @if (primaryRune1 != null)
-                                        {
-                                            <li class="mb-1">• @primaryRune1.Name</li>
-                                        }
-                                        @if (primaryRune2 != null)
-                                        {
-                                            <li class="mb-1">• @primaryRune2.Name</li>
-                                        }
-                                        @if (primaryRune3 != null)
-                                        {
-                                            <li class="mb-1">• @primaryRune3.Name</li>
-                                        }
-                                    </ul>
-                                </div>
-                                @* Runas Secundarias *@
-                                <div class="col-md-6">
-                                    <h5>Árbol Secundario</h5>
-                                    @if (secondaryTree != null)
-                                    {
-                                        <p class="text-muted mb-2">@secondaryTree.TreeName</p>
-                                    }
-                                    <ul class="list-unstyled">
-                                        @if (secondaryRune1 != null)
-                                        {
-                                            <li class="mb-1">• @secondaryRune1.Name</li>
-                                        }
-                                        @if (secondaryRune2 != null)
-                                        {
-                                            <li class="mb-1">• @secondaryRune2.Name</li>
-                                        }
-                                    </ul>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(matchup.StatShards))
-                            {
-                                <hr />
-                                <p><strong>Stat Shards:</strong> @matchup.StatShards</p>
-                            }
+                        <div class="card-body p-0">
+                            <RuneTreeDisplay
+                                PrimaryTree="@primaryTree"
+                                SecondaryTree="@secondaryTree"
+                                SelectedKeystoneId="@matchup.KeystoneId"
+                                SelectedPrimaryRune1Id="@matchup.PrimaryRune1Id"
+                                SelectedPrimaryRune2Id="@matchup.PrimaryRune2Id"
+                                SelectedPrimaryRune3Id="@matchup.PrimaryRune3Id"
+                                SelectedSecondaryRune1Id="@matchup.SecondaryRune1Id"
+                                SelectedSecondaryRune2Id="@matchup.SecondaryRune2Id"
+                                StatShards="@matchup.StatShards"
+                                SelectedKeystone="@keystoneRune"
+                                SelectedPrimaryRune1="@primaryRune1"
+                                SelectedPrimaryRune2="@primaryRune2"
+                                SelectedPrimaryRune3="@primaryRune3"
+                                SelectedSecondaryRune1="@secondaryRune1"
+                                SelectedSecondaryRune2="@secondaryRune2" />
                         </div>
                     </div>
                 </div>
@@ -240,9 +199,19 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach (var item in startingItems)
                                         {
-                                            <span class="badge bg-secondary p-2">
-                                                @item.Name (@item.TotalGold g)
-                                            </span>
+                                            <div class="text-center" title="@item.Name - @item.TotalGold g">
+                                                @if (!string.IsNullOrEmpty(item.IconUrl))
+                                                {
+                                                    <img src="@item.IconUrl" alt="@item.Name"
+                                                         style="width: 40px; height: 40px; border-radius: 4px; border: 2px solid #6c757d;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary p-2">
+                                                        @item.Name
+                                                    </span>
+                                                }
+                                            </div>
                                         }
                                     </div>
                                 </div>
@@ -254,9 +223,19 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach (var item in coreItems)
                                         {
-                                            <span class="badge bg-primary p-2">
-                                                @item.Name (@item.TotalGold g)
-                                            </span>
+                                            <div class="text-center" title="@item.Name - @item.TotalGold g">
+                                                @if (!string.IsNullOrEmpty(item.IconUrl))
+                                                {
+                                                    <img src="@item.IconUrl" alt="@item.Name"
+                                                         style="width: 48px; height: 48px; border-radius: 4px; border: 2px solid #0d6efd;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-primary p-2">
+                                                        @item.Name
+                                                    </span>
+                                                }
+                                            </div>
                                         }
                                     </div>
                                 </div>
@@ -268,9 +247,19 @@
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach (var item in situationalItems)
                                         {
-                                            <span class="badge bg-info p-2">
-                                                @item.Name (@item.TotalGold g)
-                                            </span>
+                                            <div class="text-center" title="@item.Name - @item.TotalGold g">
+                                                @if (!string.IsNullOrEmpty(item.IconUrl))
+                                                {
+                                                    <img src="@item.IconUrl" alt="@item.Name"
+                                                         style="width: 48px; height: 48px; border-radius: 4px; border: 2px solid #0dcaf0;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-info p-2">
+                                                        @item.Name
+                                                    </span>
+                                                }
+                                            </div>
                                         }
                                     </div>
                                 </div>

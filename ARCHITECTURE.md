@@ -1,295 +1,283 @@
-# Matchup Companion - Architecture Documentation
+# Matchup Companion - Documentación de Arquitectura
 
-## Overview
+## Descripción General
 
-Matchup Companion is a full-stack web application designed for League of Legends players to manage and share champion matchup strategies. The system uses a modern architecture with Blazor WebAssembly for the frontend and ASP.NET Core Web API for the backend.
+Matchup Companion es una aplicación web full-stack diseñada para que los jugadores de League of Legends gestionen y compartan estrategias de matchups entre campeones. El sistema utiliza una arquitectura moderna con Blazor WebAssembly para el frontend y ASP.NET Core Web API para el backend.
 
-## Technology Stack
+## Stack Tecnológico
 
 ### Frontend
-- **Blazor WebAssembly** - Client-side SPA framework
-- **Bootstrap 5** - UI components and responsive design
-- **Blazored.LocalStorage** - Browser storage management
-- **C# / .NET 8** - Programming language and runtime
+- **Blazor WebAssembly** - Framework SPA del lado del cliente
+- **Bootstrap 5** - Componentes UI y diseño responsivo
+- **Blazored.LocalStorage** - Gestión de almacenamiento del navegador
+- **C# / .NET 8** - Lenguaje de programación y runtime
 
 ### Backend
-- **ASP.NET Core 8 Web API** - RESTful API
-- **Entity Framework Core** - ORM for database access
-- **ASP.NET Core Identity** - Authentication and authorization
-- **JWT Bearer Authentication** - Stateless authentication
-- **SQL Server LocalDB** - Development database
+- **ASP.NET Core 8 Web API** - API RESTful
+- **Entity Framework Core** - ORM para acceso a base de datos
+- **ASP.NET Core Identity** - Autenticación y autorización
+- **JWT Bearer Authentication** - Autenticación sin estado
+- **SQL Server LocalDB** - Base de datos de desarrollo
 
-### External Services
-- **Riot Games Data Dragon API** - Champion, rune, item, and spell data
+### Servicios Externos
+- **Riot Games Data Dragon API** - Datos de campeones, runas, objetos y hechizos
 
-## Architecture Diagram
+## Diagrama de Arquitectura
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                  Blazor WebAssembly Client                   │
-│                  (MatchupCompanion.Client)                   │
-├─────────────────────────────────────────────────────────────┤
-│  Pages: Login, Register, MatchupSearch, MatchupDetail       │
-│         CreateMatchup, EditMatchup, AddTip                   │
-│                           │                                  │
-│  Services: AuthenticationService, MatchupService             │
-│           ChampionService, RoleService, RuneService          │
-│           ItemService, SummonerSpellService                  │
-│                           │                                  │
-│  Handlers: AuthorizationMessageHandler (JWT injection)      │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTP/HTTPS + JWT
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  ASP.NET Core Web API                        │
-│                  (MatchupCompanion.API)                      │
-├─────────────────────────────────────────────────────────────┤
-│  Controllers: AuthController, MatchupsController             │
-│              ChampionsController, RolesController            │
-│              RunesController, ItemsController                │
-│              SummonerSpellsController, RiotSyncController    │
-│                           │                                  │
-│  Services: AuthService, MatchupService                       │
-│           ChampionService, RiotApiService                    │
-│                           │                                  │
-│  Repositories: MatchupRepository, ChampionRepository         │
-│               RoleRepository, RuneRepository                 │
-│               ItemRepository, SummonerSpellRepository        │
-│                           │                                  │
-│  Data: ApplicationDbContext (EF Core)                        │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                           ▼
-                  ┌──────────────────┐
-                  │   SQL Server     │
-                  │   LocalDB        │
-                  └──────────────────┘
++-------------------------------------------------------------+
+|                  Cliente Blazor WebAssembly                  |
+|                  (MatchupCompanion.Client)                   |
++-------------------------------------------------------------+
+|  Páginas: Login, Register, MatchupSearch, MatchupDetail      |
+|          CreateMatchup, EditMatchup, AddTip                  |
+|                           |                                  |
+|  Servicios: AuthenticationService, MatchupService            |
+|            ChampionService, RoleService, RuneService         |
+|            ItemService, SummonerSpellService                 |
+|                           |                                  |
+|  Handlers: AuthorizationMessageHandler (inyección JWT)       |
++-----------------------------+--------------------------------+
+                              | HTTP/HTTPS + JWT
+                              v
++-------------------------------------------------------------+
+|                  ASP.NET Core Web API                        |
+|                  (MatchupCompanion.API)                      |
++-------------------------------------------------------------+
+|  Controllers: AuthController, MatchupsController             |
+|              ChampionsController, RolesController            |
+|              RunesController, ItemsController                |
+|              SummonerSpellsController, RiotSyncController    |
+|                           |                                  |
+|  Services: AuthService, MatchupService                       |
+|           ChampionService, RiotApiService                    |
+|                           |                                  |
+|  Repositories: MatchupRepository, ChampionRepository         |
+|               RoleRepository, RuneRepository                 |
+|               ItemRepository, SummonerSpellRepository        |
+|                           |                                  |
+|  Data: ApplicationDbContext (EF Core)                        |
++-----------------------------+--------------------------------+
+                              |
+                              v
+                  +------------------+
+                  |   SQL Server     |
+                  |   LocalDB        |
+                  +------------------+
 ```
 
-## Authentication & Authorization
+## Autenticación y Autorización
 
-### Authentication Flow
+### Flujo de Autenticación
 
-1. **User Registration/Login**
-   - User submits credentials to `/api/auth/login` or `/api/auth/register`
-   - Backend validates credentials and generates JWT token
-   - Token is returned with user information
+1. **Registro/Login de Usuario**
+   - El usuario envía credenciales a `/api/auth/login` o `/api/auth/register`
+   - El backend valida las credenciales y genera un token JWT
+   - El token se devuelve junto con información del usuario
 
-2. **Token Storage**
-   - Frontend stores token in browser's LocalStorage
-   - Token includes claims: UserId, Username, Email, DisplayName, IsGuest, Roles
+2. **Almacenamiento del Token**
+   - El frontend almacena el token en LocalStorage del navegador
+   - El token incluye claims: UserId, Username, Email, DisplayName, IsGuest, Roles
 
-3. **Request Authentication**
-   - `AuthorizationMessageHandler` intercepts all HTTP requests
-   - Automatically adds `Authorization: Bearer <token>` header
-   - Backend validates token signature, issuer, audience, and expiration
+3. **Autenticación de Requests**
+   - `AuthorizationMessageHandler` intercepta todas las peticiones HTTP
+   - Añade automáticamente el header `Authorization: Bearer <token>`
+   - El backend valida la firma del token, emisor, audiencia y expiración
 
-4. **Session Types**
-   - **Regular Users**: Full access (create, edit, delete own matchups)
-   - **Guest Users**: Read-only access (24-hour expiration)
-   - **Admin Users**: Full access to all matchups
+4. **Tipos de Sesión**
+   - **Usuarios Regulares**: Acceso completo (crear, editar, eliminar matchups propios)
+   - **Usuarios Invitados**: Acceso de solo lectura (expiración de 24 horas)
+   - **Administradores**: Acceso completo a todos los matchups
 
-### Authorization Rules
+### Reglas de Autorización
 
-| Resource | Guest | User | Creator | Admin |
-|----------|-------|------|---------|-------|
-| View Matchups | ✅ | ✅ | ✅ | ✅ |
-| Create Matchup | ❌ | ✅ | ✅ | ✅ |
-| Edit Matchup | ❌ | ❌ | ✅ | ✅ |
-| Delete Matchup | ❌ | ❌ | ✅ | ✅ |
-| Add Tip | ❌ | ✅ | ✅ | ✅ |
+| Recurso | Invitado | Usuario | Creador | Admin |
+|---------|----------|---------|---------|-------|
+| Ver Matchups | Si | Si | Si | Si |
+| Crear Matchup | No | Si | Si | Si |
+| Editar Matchup | No | No | Si | Si |
+| Eliminar Matchup | No | No | Si | Si |
+| Agregar Tip | No | Si | Si | Si |
 
-### JWT Configuration
+### Configuración JWT
 
-- **Secret Key**: Configured in appsettings.json
-- **Issuer**: `MatchupCompanionAPI`
-- **Audience**: `MatchupCompanionClient`
-- **Expiration**: 60 minutes (configurable)
-- **Validation**: Signature, issuer, audience, and lifetime
+- **Clave Secreta**: Configurada en appsettings.json
+- **Emisor**: `MatchupCompanionAPI`
+- **Audiencia**: `MatchupCompanionClient`
+- **Expiración**: 60 minutos (configurable)
+- **Validación**: Firma, emisor, audiencia y tiempo de vida
 
-## Data Models
+## Modelos de Datos
 
-### Core Entities
+### Entidades Principales
 
 **Matchup**
-- Represents a champion vs champion matchup in a specific role
-- Contains difficulty rating, general advice, and detailed strategy
-- Includes recommended runes, items, summoner spells, and ability order
-- Tracks creator (CreatedById) and timestamps
+- Representa un enfrentamiento entre campeones en un rol específico
+- Contiene calificación de dificultad, consejos generales y estrategia detallada
+- Incluye runas, objetos, hechizos de invocador y orden de habilidades recomendados
+- Registra el creador (CreatedById) y marcas de tiempo
 
 **MatchupTip**
-- Specific advice categorized by game phase or topic
-- Linked to a matchup
-- Includes priority rating and author information
+- Consejo específico categorizado por fase del juego o tema
+- Vinculado a un matchup
+- Incluye calificación de prioridad e información del autor
 
 **Champion**
-- League of Legends champion data from Riot API
-- Includes name, title, image, description, and primary role
+- Datos del campeón de League of Legends desde la API de Riot
+- Incluye nombre, título, imagen, descripción y rol principal
 
 **Rune**
-- Rune data organized by trees (Precision, Domination, etc.)
-- Includes keystones and secondary runes
+- Datos de runas organizados por árboles (Precisión, Dominación, etc.)
+- Incluye piedras angulares y runas secundarias
 
 **Item**
-- Item data with stats, cost, and build paths
+- Datos de objetos con estadísticas, costo y rutas de construcción
 
 **SummonerSpell**
-- Summoner spell data with cooldowns and effects
+- Datos de hechizos de invocador con tiempos de recarga y efectos
 
-### Authentication Entities
+### Entidades de Autenticación
 
-**ApplicationUser** (extends IdentityUser)
-- User account with display name
-- Guest user tracking (IsGuest, GuestExpiresAt)
-- Linked to created matchups
+**ApplicationUser** (extiende IdentityUser)
+- Cuenta de usuario con nombre para mostrar
+- Seguimiento de usuario invitado (IsGuest, GuestExpiresAt)
+- Vinculado a matchups creados
 
-## API Endpoints
+## Endpoints de la API
 
-### Authentication (`/api/auth`)
-- `POST /register` - Create new user account
-- `POST /login` - Authenticate and get JWT token
-- `POST /guest` - Create temporary guest session
-- `POST /refresh` - Refresh expired token
-- `GET /me` - Get current user information
-- `GET /validate` - Validate token
-- `POST /logout` - Logout (client-side)
+### Autenticación (`/api/auth`)
+- `POST /register` - Crear nueva cuenta de usuario
+- `POST /login` - Autenticar y obtener token JWT
+- `POST /guest` - Crear sesión temporal de invitado
+- `POST /refresh` - Refrescar token expirado
+- `GET /me` - Obtener información del usuario actual
+- `GET /validate` - Validar token
+- `POST /logout` - Cerrar sesión (lado del cliente)
 
 ### Matchups (`/api/matchups`)
-- `GET /` - Get all matchups
-- `GET /{id}` - Get matchup by ID
-- `GET /search` - Search matchup by champions and role
-- `POST /` - Create new matchup (auth required)
-- `PUT /{id}` - Update matchup (auth + ownership required)
-- `DELETE /{id}` - Delete matchup (auth + ownership required)
-- `POST /tips` - Add tip to matchup (auth required)
+- `GET /` - Obtener todos los matchups
+- `GET /{id}` - Obtener matchup por ID
+- `GET /search` - Buscar matchup por campeones y rol
+- `POST /` - Crear nuevo matchup (requiere autenticación)
+- `PUT /{id}` - Actualizar matchup (requiere autenticación + propiedad)
+- `DELETE /{id}` - Eliminar matchup (requiere autenticación + propiedad)
+- `POST /tips` - Agregar tip a matchup (requiere autenticación)
 
-### Game Data
-- `/api/champions` - Champion data
-- `/api/roles` - Role data
-- `/api/runes` - Rune and rune tree data
-- `/api/items` - Item data
-- `/api/summonerspells` - Summoner spell data
-- `/api/riotsync` - Trigger manual data synchronization
+### Datos del Juego
+- `/api/champions` - Datos de campeones
+- `/api/roles` - Datos de roles
+- `/api/runes` - Datos de runas y árboles de runas
+- `/api/items` - Datos de objetos
+- `/api/summonerspells` - Datos de hechizos de invocador
+- `/api/riotsync` - Activar sincronización manual de datos
 
-## Key Features
+## Características Principales
 
-### 1. Matchup Management
-- Create, read, update, delete (CRUD) operations
-- Rich matchup details: runes, items, spells, ability order, strategy
-- Permission-based access control
-- Search by champion and role
+### 1. Gestión de Matchups
+- Operaciones CRUD (Crear, Leer, Actualizar, Eliminar)
+- Detalles completos: runas, objetos, hechizos, orden de habilidades, estrategia
+- Control de acceso basado en permisos
+- Búsqueda por campeón y rol
 
-### 2. Authentication System
-- JWT-based stateless authentication
-- Role-based authorization (Admin, User, Guest)
-- Automatic token injection via HTTP handler
-- Secure password requirements
+### 2. Sistema de Autenticación
+- Autenticación sin estado basada en JWT
+- Autorización basada en roles (Admin, Usuario, Invitado)
+- Inyección automática de token via handler HTTP
+- Requisitos de contraseña seguros
 
-### 3. Data Synchronization
-- Automatic sync from Riot Data Dragon on startup
-- Manual sync available via API endpoint
-- Spanish language support for game data
+### 3. Sincronización de Datos
+- Sincronización automática desde Riot Data Dragon al iniciar
+- Sincronización manual disponible via endpoint de API
+- Soporte para idioma español
 
-### 4. User Experience
-- Responsive Bootstrap UI
-- Real-time validation
-- Loading states and error handling
-- Confirmation modals for destructive actions
+### 4. Experiencia de Usuario
+- UI responsiva con Bootstrap
+- Validación en tiempo real
+- Estados de carga y manejo de errores
+- Modales de confirmación para acciones destructivas
 
-## Security Considerations
+## Consideraciones de Seguridad
 
-### Implemented
-- ✅ JWT signature validation
-- ✅ Token expiration checking
-- ✅ HTTPS support (configurable)
-- ✅ Password complexity requirements
-- ✅ Role-based authorization
-- ✅ Guest user restrictions
-- ✅ CORS policy (configurable)
+### Implementado
+- Validación de firma JWT
+- Verificación de expiración de token
+- Soporte HTTPS (configurable)
+- Requisitos de complejidad de contraseña
+- Autorización basada en roles
+- Restricciones para usuarios invitados
+- Política CORS (configurable)
 
-### Production Recommendations
-- Change JWT secret key
-- Enable HTTPS enforcement
-- Configure restrictive CORS policy
-- Add rate limiting
-- Implement refresh token rotation
-- Add request logging
-- Enable email confirmation
+### Recomendaciones para Producción
+- Cambiar la clave secreta JWT
+- Habilitar HTTPS obligatorio
+- Configurar política CORS restrictiva
+- Agregar rate limiting
+- Implementar rotación de refresh tokens
+- Agregar logging de requests
+- Habilitar confirmación de email
 
-## Database Schema
+## Esquema de Base de Datos
 
-### Identity Tables (ASP.NET Core Identity)
-- AspNetUsers - User accounts
-- AspNetRoles - User roles
-- AspNetUserRoles - User-role relationships
+### Tablas de Identity (ASP.NET Core Identity)
+- AspNetUsers - Cuentas de usuario
+- AspNetRoles - Roles de usuario
+- AspNetUserRoles - Relaciones usuario-rol
 - AspNetUserClaims, AspNetUserLogins, AspNetUserTokens
 
-### Application Tables
-- Champions - Champion data
-- Roles - Lane role data
-- Runes - Rune data
-- RuneTrees - Rune tree data
-- Items - Item data
-- SummonerSpells - Summoner spell data
-- Matchups - Matchup strategies
-- MatchupTips - Matchup-specific tips
+### Tablas de la Aplicación
+- Champions - Datos de campeones
+- GameRoles - Datos de roles de línea
+- Runes - Datos de runas
+- RuneTrees - Datos de árboles de runas
+- Items - Datos de objetos
+- SummonerSpells - Datos de hechizos de invocador
+- Matchups - Estrategias de matchups
+- MatchupTips - Tips específicos de matchups
 
-## Development Setup
+## Configuración de Desarrollo
 
-### Prerequisites
+### Requisitos Previos
 - .NET 8 SDK
-- Visual Studio 2022 or VS Code
+- Visual Studio 2022 o VS Code
 - SQL Server LocalDB
 
-### Running the Application
+### Ejecutar la Aplicación
 
 1. **Backend**
 ```bash
 cd MatchupCompanion.API
 dotnet run
 ```
-API will be available at `http://localhost:5007`
+La API estará disponible en `http://localhost:5007`
 
 2. **Frontend**
 ```bash
 cd MatchupCompanion.Client
 dotnet run
 ```
-Client will be available at `http://localhost:5173`
+El cliente estará disponible en `http://localhost:5173`
 
-### First Run
-- Database is created automatically
-- Riot data is synchronized on first startup
-- Default admin user: `admin@matchup.com` / `Admin123`
+### Primera Ejecución
+- La base de datos se crea automáticamente
+- Los datos de Riot se sincronizan en el primer inicio
+- Usuario administrador por defecto: `admin@matchup.com` / `Admin123`
 
-## Project Structure
+## Estructura del Proyecto
 
 ```
 MatchupCompanion/
 ├── MatchupCompanion.API/          # Backend Web API
-│   ├── Controllers/               # API endpoints
-│   ├── Services/                  # Business logic
-│   ├── Data/                      # EF Core context and repositories
-│   ├── Models/                    # Entities and DTOs
-│   ├── ExternalServices/          # Riot API integration
-│   └── Migrations/                # EF Core migrations
-├── MatchupCompanion.Client/       # Blazor WebAssembly frontend
-│   ├── Pages/                     # Razor pages
-│   ├── Services/                  # HTTP client services
-│   ├── Handlers/                  # HTTP message handlers
-│   └── wwwroot/                   # Static assets
-└── MatchupCompanion.Shared/       # Shared DTOs and models
-    └── Models/                    # Data transfer objects
+│   ├── Controllers/               # Endpoints de API
+│   ├── Services/                  # Lógica de negocio
+│   ├── Data/                      # Contexto EF Core y repositorios
+│   ├── Models/                    # Entidades y DTOs
+│   ├── ExternalServices/          # Integración con API de Riot
+│   └── Migrations/                # Migraciones de EF Core
+├── MatchupCompanion.Client/       # Frontend Blazor WebAssembly
+│   ├── Pages/                     # Páginas Razor
+│   ├── Services/                  # Servicios cliente HTTP
+│   ├── Handlers/                  # Handlers de mensajes HTTP
+│   └── wwwroot/                   # Recursos estáticos
+└── MatchupCompanion.Shared/       # DTOs y modelos compartidos
+    └── Models/                    # Objetos de transferencia de datos
 ```
-
-## Future Enhancements
-
-- Real-time collaborative editing
-- Matchup voting and ratings
-- User profiles and statistics
-- Image uploads for strategies
-- Video guide integration
-- Mobile app support
-- Advanced search and filtering
-- Email notifications
-- Social sharing features

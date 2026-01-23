@@ -221,7 +221,19 @@ public class MatchupService : IMatchupService
                 ImageUrl = matchup.PlayerChampion.ImageUrl,
                 Description = matchup.PlayerChampion.Description,
                 PrimaryRoleId = matchup.PlayerChampion.PrimaryRoleId,
-                PrimaryRoleName = matchup.PlayerChampion.PrimaryRole?.Name
+                PrimaryRoleName = matchup.PlayerChampion.PrimaryRole?.Name,
+                QSpellId = matchup.PlayerChampion.QSpellId,
+                QSpellName = matchup.PlayerChampion.QSpellName,
+                QSpellIcon = matchup.PlayerChampion.QSpellIcon,
+                WSpellId = matchup.PlayerChampion.WSpellId,
+                WSpellName = matchup.PlayerChampion.WSpellName,
+                WSpellIcon = matchup.PlayerChampion.WSpellIcon,
+                ESpellId = matchup.PlayerChampion.ESpellId,
+                ESpellName = matchup.PlayerChampion.ESpellName,
+                ESpellIcon = matchup.PlayerChampion.ESpellIcon,
+                RSpellId = matchup.PlayerChampion.RSpellId,
+                RSpellName = matchup.PlayerChampion.RSpellName,
+                RSpellIcon = matchup.PlayerChampion.RSpellIcon
             },
             EnemyChampion = new ChampionDto
             {
@@ -232,7 +244,19 @@ public class MatchupService : IMatchupService
                 ImageUrl = matchup.EnemyChampion.ImageUrl,
                 Description = matchup.EnemyChampion.Description,
                 PrimaryRoleId = matchup.EnemyChampion.PrimaryRoleId,
-                PrimaryRoleName = matchup.EnemyChampion.PrimaryRole?.Name
+                PrimaryRoleName = matchup.EnemyChampion.PrimaryRole?.Name,
+                QSpellId = matchup.EnemyChampion.QSpellId,
+                QSpellName = matchup.EnemyChampion.QSpellName,
+                QSpellIcon = matchup.EnemyChampion.QSpellIcon,
+                WSpellId = matchup.EnemyChampion.WSpellId,
+                WSpellName = matchup.EnemyChampion.WSpellName,
+                WSpellIcon = matchup.EnemyChampion.WSpellIcon,
+                ESpellId = matchup.EnemyChampion.ESpellId,
+                ESpellName = matchup.EnemyChampion.ESpellName,
+                ESpellIcon = matchup.EnemyChampion.ESpellIcon,
+                RSpellId = matchup.EnemyChampion.RSpellId,
+                RSpellName = matchup.EnemyChampion.RSpellName,
+                RSpellIcon = matchup.EnemyChampion.RSpellIcon
             },
             Role = new RoleDto
             {

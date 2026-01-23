@@ -1,0 +1,185 @@
+@using MatchupCompanion.Shared.Models
+
+<div class="rune-tree-container" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%); border-radius: 12px; padding: 24px; color: #e0e0e0;">
+    <div class="rune-trees-wrapper" style="display: flex; flex-direction: row; gap: 40px; justify-content: center; align-items: flex-start;">
+        @* Árbol Primario - Solo runas seleccionadas *@
+        @if (PrimaryTree != null && SelectedKeystone != null)
+        {
+            <div class="rune-tree primary-tree" style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px 20px; min-width: 140px; border: 1px solid rgba(200, 170, 110, 0.3);">
+                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                    <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #c8aa6e;">@PrimaryTree.TreeName</span>
+                </div>
+
+                <div class="rune-column" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    @* Keystone *@
+                    <div class="rune-item keystone" title="@SelectedKeystone.Name" style="display: flex; flex-direction: column; align-items: center; gap: 5px; margin-bottom: 5px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                        @if (!string.IsNullOrEmpty(SelectedKeystone.IconUrl))
+                        {
+                            <img src="@SelectedKeystone.IconUrl" alt="@SelectedKeystone.Name" style="width: 56px; height: 56px; border-radius: 50%; border: 3px solid rgba(200, 170, 110, 0.5); box-shadow: 0 0 12px rgba(200, 170, 110, 0.4);" />
+                        }
+                        <span style="font-size: 11px; color: #aaa; text-align: center; max-width: 80px; line-height: 1.2;">@SelectedKeystone.Name</span>
+                    </div>
+
+                    @* Runa 1 *@
+                    @if (SelectedPrimaryRune1 != null)
+                    {
+                        <div class="rune-item" title="@SelectedPrimaryRune1.Name" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                            @if (!string.IsNullOrEmpty(SelectedPrimaryRune1.IconUrl))
+                            {
+                                <img src="@SelectedPrimaryRune1.IconUrl" alt="@SelectedPrimaryRune1.Name" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(200, 170, 110, 0.5); box-shadow: 0 0 8px rgba(200, 170, 110, 0.3);" />
+                            }
+                            <span style="font-size: 11px; color: #aaa; text-align: center; max-width: 80px; line-height: 1.2;">@SelectedPrimaryRune1.Name</span>
+                        </div>
+                    }
+
+                    @* Runa 2 *@
+                    @if (SelectedPrimaryRune2 != null)
+                    {
+                        <div class="rune-item" title="@SelectedPrimaryRune2.Name" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                            @if (!string.IsNullOrEmpty(SelectedPrimaryRune2.IconUrl))
+                            {
+                                <img src="@SelectedPrimaryRune2.IconUrl" alt="@SelectedPrimaryRune2.Name" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(200, 170, 110, 0.5); box-shadow: 0 0 8px rgba(200, 170, 110, 0.3);" />
+                            }
+                            <span style="font-size: 11px; color: #aaa; text-align: center; max-width: 80px; line-height: 1.2;">@SelectedPrimaryRune2.Name</span>
+                        </div>
+                    }
+
+                    @* Runa 3 *@
+                    @if (SelectedPrimaryRune3 != null)
+                    {
+                        <div class="rune-item" title="@SelectedPrimaryRune3.Name" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                            @if (!string.IsNullOrEmpty(SelectedPrimaryRune3.IconUrl))
+                            {
+                                <img src="@SelectedPrimaryRune3.IconUrl" alt="@SelectedPrimaryRune3.Name" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(200, 170, 110, 0.5); box-shadow: 0 0 8px rgba(200, 170, 110, 0.3);" />
+                            }
+                            <span style="font-size: 11px; color: #aaa; text-align: center; max-width: 80px; line-height: 1.2;">@SelectedPrimaryRune3.Name</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @* Árbol Secundario - Solo runas seleccionadas *@
+        @if (SecondaryTree != null && (SelectedSecondaryRune1 != null || SelectedSecondaryRune2 != null))
+        {
+            <div class="rune-tree secondary-tree" style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px 20px; min-width: 140px; border: 1px solid rgba(110, 170, 200, 0.3);">
+                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                    <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #6eaac8;">@SecondaryTree.TreeName</span>
+                </div>
+
+                <div class="rune-column" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    @* Runa Secundaria 1 *@
+                    @if (SelectedSecondaryRune1 != null)
+                    {
+                        <div class="rune-item" title="@SelectedSecondaryRune1.Name" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                            @if (!string.IsNullOrEmpty(SelectedSecondaryRune1.IconUrl))
+                            {
+                                <img src="@SelectedSecondaryRune1.IconUrl" alt="@SelectedSecondaryRune1.Name" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(110, 170, 200, 0.5); box-shadow: 0 0 8px rgba(110, 170, 200, 0.3);" />
+                            }
+                            <span style="font-size: 11px; color: #aaa; text-align: center; max-width: 80px; line-height: 1.2;">@SelectedSecondaryRune1.Name</span>
+                        </div>
+                    }
+
+                    @* Runa Secundaria 2 *@
+                    @if (SelectedSecondaryRune2 != null)
+                    {
+                        <div class="rune-item" title="@SelectedSecondaryRune2.Name" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                            @if (!string.IsNullOrEmpty(SelectedSecondaryRune2.IconUrl))
+                            {
+                                <img src="@SelectedSecondaryRune2.IconUrl" alt="@SelectedSecondaryRune2.Name" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(110, 170, 200, 0.5); box-shadow: 0 0 8px rgba(110, 170, 200, 0.3);" />
+                            }
+                            <span style="font-size: 11px; color: #aaa; text-align: center; max-width: 80px; line-height: 1.2;">@SelectedSecondaryRune2.Name</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @* Stat Shards *@
+        @if (!string.IsNullOrEmpty(StatShards))
+        {
+            <div class="stat-shards-container" style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px 20px; min-width: 100px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                    <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #c8aa6e;">Shards</span>
+                </div>
+                <div class="stat-shards" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    @{
+                        var shardNames = StatShards.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    }
+                    @foreach (var shard in shardNames)
+                    {
+                        var shardTrimmed = shard.Trim();
+                        <div class="shard-item" style="display: flex; align-items: center; gap: 8px;">
+                            <div class="shard-icon" style="width: 28px; height: 28px; border-radius: 50%; background: rgba(30, 30, 50, 0.8); display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid rgba(92, 158, 173, 0.4); box-shadow: 0 0 6px rgba(92, 158, 173, 0.3); color: @GetShardColor(shardTrimmed);">
+                                @GetShardSymbol(shardTrimmed)
+                            </div>
+                            <span style="font-size: 11px; color: #aaa;">@shardTrimmed</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public RuneTreeDto? PrimaryTree { get; set; }
+    [Parameter] public RuneTreeDto? SecondaryTree { get; set; }
+    [Parameter] public int? SelectedKeystoneId { get; set; }
+    [Parameter] public int? SelectedPrimaryRune1Id { get; set; }
+    [Parameter] public int? SelectedPrimaryRune2Id { get; set; }
+    [Parameter] public int? SelectedPrimaryRune3Id { get; set; }
+    [Parameter] public int? SelectedSecondaryRune1Id { get; set; }
+    [Parameter] public int? SelectedSecondaryRune2Id { get; set; }
+    [Parameter] public string? StatShards { get; set; }
+
+    // Runas seleccionadas
+    [Parameter] public RuneDto? SelectedKeystone { get; set; }
+    [Parameter] public RuneDto? SelectedPrimaryRune1 { get; set; }
+    [Parameter] public RuneDto? SelectedPrimaryRune2 { get; set; }
+    [Parameter] public RuneDto? SelectedPrimaryRune3 { get; set; }
+    [Parameter] public RuneDto? SelectedSecondaryRune1 { get; set; }
+    [Parameter] public RuneDto? SelectedSecondaryRune2 { get; set; }
+
+    private string GetShardClass(string shardName)
+    {
+        var lower = shardName.ToLower();
+        if (lower.Contains("adaptive")) return "adaptive";
+        if (lower.Contains("attack")) return "attack-speed";
+        if (lower.Contains("haste")) return "ability-haste";
+        if (lower.Contains("movement")) return "movement-speed";
+        if (lower.Contains("health")) return "health";
+        if (lower.Contains("tenacity")) return "tenacity";
+        if (lower.Contains("armor")) return "armor";
+        if (lower.Contains("magic") || lower.Contains("mr")) return "magic-resist";
+        return "default";
+    }
+
+    private string GetShardSymbol(string shardName)
+    {
+        var lower = shardName.ToLower();
+        if (lower.Contains("adaptive")) return "◆";
+        if (lower.Contains("attack")) return "⚔";
+        if (lower.Contains("haste")) return "◈";
+        if (lower.Contains("movement")) return "➤";
+        if (lower.Contains("health")) return "♥";
+        if (lower.Contains("tenacity")) return "⛨";
+        if (lower.Contains("armor")) return "🛡";
+        if (lower.Contains("magic") || lower.Contains("mr")) return "✧";
+        return "●";
+    }
+
+    private string GetShardColor(string shardName)
+    {
+        var lower = shardName.ToLower();
+        if (lower.Contains("adaptive")) return "#c8aa6e";
+        if (lower.Contains("attack")) return "#ffcc00";
+        if (lower.Contains("haste")) return "#5c9ead";
+        if (lower.Contains("movement")) return "#7ecf7e";
+        if (lower.Contains("health")) return "#e05555";
+        if (lower.Contains("tenacity")) return "#a855e0";
+        if (lower.Contains("armor")) return "#d4a855";
+        if (lower.Contains("magic") || lower.Contains("mr")) return "#55a8e0";
+        return "#888";
+    }
+}

@@ -1,0 +1,237 @@
+.rune-tree-container {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+    border-radius: 12px;
+    padding: 24px;
+    color: #e0e0e0;
+}
+
+.rune-trees-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* Árbol de runas */
+.rune-tree {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px 20px;
+    min-width: 140px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.primary-tree {
+    border-color: rgba(200, 170, 110, 0.3);
+}
+
+.secondary-tree {
+    border-color: rgba(110, 170, 200, 0.3);
+}
+
+/* Encabezado del árbol */
+.tree-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tree-icon {
+    width: 24px;
+    height: 24px;
+    filter: drop-shadow(0 0 4px rgba(200, 170, 110, 0.5));
+}
+
+.tree-name {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #c8aa6e;
+}
+
+.secondary-tree .tree-name {
+    color: #6eaac8;
+}
+
+/* Columna de runas */
+.rune-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Item de runa individual */
+.rune-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.rune-item.keystone {
+    margin-bottom: 5px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Iconos de runas */
+.rune-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid rgba(200, 170, 110, 0.5);
+    box-shadow: 0 0 8px rgba(200, 170, 110, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rune-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 12px rgba(200, 170, 110, 0.5);
+}
+
+.keystone-icon {
+    width: 56px;
+    height: 56px;
+    border-width: 3px;
+    box-shadow: 0 0 12px rgba(200, 170, 110, 0.4);
+}
+
+.secondary-tree .rune-icon {
+    border-color: rgba(110, 170, 200, 0.5);
+    box-shadow: 0 0 8px rgba(110, 170, 200, 0.3);
+}
+
+.secondary-tree .rune-icon:hover {
+    box-shadow: 0 0 12px rgba(110, 170, 200, 0.5);
+}
+
+/* Nombre de la runa */
+.rune-name {
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    max-width: 80px;
+    line-height: 1.2;
+}
+
+/* Stat Shards */
+.stat-shards-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px 20px;
+    min-width: 100px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-shards {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.shard-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.shard-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(30, 30, 50, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    border: 2px solid rgba(92, 158, 173, 0.4);
+    box-shadow: 0 0 6px rgba(92, 158, 173, 0.3);
+}
+
+.shard-name {
+    font-size: 11px;
+    color: #aaa;
+}
+
+/* Colores por tipo de shard */
+.shard-icon.adaptive {
+    color: #c8aa6e;
+    border-color: rgba(200, 170, 110, 0.4);
+}
+
+.shard-icon.attack-speed {
+    color: #ffcc00;
+    border-color: rgba(255, 204, 0, 0.4);
+}
+
+.shard-icon.ability-haste {
+    color: #5c9ead;
+    border-color: rgba(92, 158, 173, 0.4);
+}
+
+.shard-icon.movement-speed {
+    color: #7ecf7e;
+    border-color: rgba(126, 207, 126, 0.4);
+}
+
+.shard-icon.health {
+    color: #e05555;
+    border-color: rgba(224, 85, 85, 0.4);
+}
+
+.shard-icon.tenacity {
+    color: #a855e0;
+    border-color: rgba(168, 85, 224, 0.4);
+}
+
+.shard-icon.armor {
+    color: #d4a855;
+    border-color: rgba(212, 168, 85, 0.4);
+}
+
+.shard-icon.magic-resist {
+    color: #55a8e0;
+    border-color: rgba(85, 168, 224, 0.4);
+}
+
+/* Responsive - solo en pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .rune-trees-wrapper {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .rune-tree {
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .rune-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .keystone-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .stat-shards-container {
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .shard-item {
+        width: 100%;
+        justify-content: center;
+    }
+}
