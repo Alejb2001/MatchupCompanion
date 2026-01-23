@@ -7,22 +7,22 @@ namespace MatchupCompanion.Shared.Models;
 /// </summary>
 public class CreateMatchupTipDto
 {
-    [Required(ErrorMessage = "MatchupId es requerido")]
+    [Required(ErrorMessage = "El matchup es requerido")]
     public int MatchupId { get; set; }
 
-    [Required(ErrorMessage = "Category es requerida")]
+    [Required(ErrorMessage = "La categoría es requerida")]
     [RegularExpression("^(EarlyGame|MidGame|LateGame|Items|Runes|Abilities|General)$",
-        ErrorMessage = "Category debe ser: EarlyGame, MidGame, LateGame, Items, Runes, Abilities o General")]
+        ErrorMessage = "La categoría debe ser: Fase Inicial, Fase Media, Fase Tardía, Objetos, Runas, Habilidades o General")]
     public string Category { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Content es requerido")]
-    [MinLength(10, ErrorMessage = "Content debe tener al menos 10 caracteres")]
-    [MaxLength(2000, ErrorMessage = "Content no puede exceder 2000 caracteres")]
+    [Required(ErrorMessage = "El contenido es requerido")]
+    [MinLength(10, ErrorMessage = "El contenido debe tener al menos 10 caracteres")]
+    [MaxLength(2000, ErrorMessage = "El contenido no puede exceder 2000 caracteres")]
     public string Content { get; set; } = string.Empty;
 
-    [Range(1, 10, ErrorMessage = "Priority debe estar entre 1 y 10")]
+    [Range(1, 10, ErrorMessage = "La prioridad debe estar entre 1 y 10")]
     public int Priority { get; set; } = 5;
 
-    [MaxLength(100, ErrorMessage = "AuthorName no puede exceder 100 caracteres")]
+    [MaxLength(100, ErrorMessage = "El nombre del autor no puede exceder 100 caracteres")]
     public string? AuthorName { get; set; }
 }

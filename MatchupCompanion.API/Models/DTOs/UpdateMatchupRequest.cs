@@ -7,12 +7,12 @@ namespace MatchupCompanion.API.Models.DTOs;
 /// </summary>
 public class UpdateMatchupRequest
 {
-    [Required(ErrorMessage = "Difficulty es requerido")]
+    [Required(ErrorMessage = "La dificultad es requerida")]
     [RegularExpression("^(Easy|Medium|Hard|Extreme)$",
-        ErrorMessage = "Difficulty debe ser: Easy, Medium, Hard o Extreme")]
+        ErrorMessage = "La dificultad debe ser: Fácil, Medio, Difícil o Extremo")]
     public string Difficulty { get; set; } = string.Empty;
 
-    [MaxLength(1000, ErrorMessage = "GeneralAdvice no puede exceder 1000 caracteres")]
+    [MaxLength(1000, ErrorMessage = "El consejo general no puede exceder 1000 caracteres")]
     public string? GeneralAdvice { get; set; }
 
     // Runas primarias
@@ -53,6 +53,6 @@ public class UpdateMatchupRequest
     public string? AbilityOrder { get; set; }
 
     // Estrategia
-    [MaxLength(5000, ErrorMessage = "Strategy no puede exceder 5000 caracteres")]
+    [MaxLength(5000, ErrorMessage = "La estrategia no puede exceder 5000 caracteres")]
     public string? Strategy { get; set; }
 }

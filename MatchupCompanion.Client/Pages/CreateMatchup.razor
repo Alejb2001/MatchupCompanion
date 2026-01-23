@@ -112,7 +112,7 @@
                                         <input type="radio" class="btn-check" name="difficulty" id="diff-@diff"
                                                value="@diff" checked="@(createMatchupDto.Difficulty == diff)"
                                                @onchange="@(() => createMatchupDto.Difficulty = diff)">
-                                        <label class="btn @GetDifficultyButtonClass(diff)" for="diff-@diff">@diff</label>
+                                        <label class="btn @GetDifficultyButtonClass(diff)" for="diff-@diff">@GetDifficultyDisplayName(diff)</label>
                                     }
                                 </div>
                                 <ValidationMessage For="@(() => createMatchupDto.Difficulty)" />
@@ -260,6 +260,15 @@
         "Hard" => "btn-outline-danger",
         "Extreme" => "btn-outline-dark",
         _ => "btn-outline-secondary"
+    };
+
+    private string GetDifficultyDisplayName(string difficulty) => difficulty switch
+    {
+        "Easy" => "Fácil",
+        "Medium" => "Medio",
+        "Hard" => "Difícil",
+        "Extreme" => "Extremo",
+        _ => difficulty
     };
 
     private async Task HandleSubmit()

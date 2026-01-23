@@ -7,20 +7,20 @@ namespace MatchupCompanion.API.Models.DTOs;
 /// </summary>
 public class CreateMatchupRequest
 {
-    [Required(ErrorMessage = "PlayerChampionId es requerido")]
+    [Required(ErrorMessage = "El campeón del jugador es requerido")]
     public int PlayerChampionId { get; set; }
 
-    [Required(ErrorMessage = "EnemyChampionId es requerido")]
+    [Required(ErrorMessage = "El campeón enemigo es requerido")]
     public int EnemyChampionId { get; set; }
 
-    [Required(ErrorMessage = "RoleId es requerido")]
+    [Required(ErrorMessage = "El rol es requerido")]
     public int RoleId { get; set; }
 
-    [Required(ErrorMessage = "Difficulty es requerido")]
+    [Required(ErrorMessage = "La dificultad es requerida")]
     [RegularExpression("^(Easy|Medium|Hard|Extreme)$",
-        ErrorMessage = "Difficulty debe ser: Easy, Medium, Hard o Extreme")]
+        ErrorMessage = "La dificultad debe ser: Fácil, Medio, Difícil o Extremo")]
     public string Difficulty { get; set; } = string.Empty;
 
-    [MaxLength(1000, ErrorMessage = "GeneralAdvice no puede exceder 1000 caracteres")]
+    [MaxLength(1000, ErrorMessage = "El consejo general no puede exceder 1000 caracteres")]
     public string? GeneralAdvice { get; set; }
 }

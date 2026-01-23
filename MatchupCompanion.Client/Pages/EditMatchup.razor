@@ -124,7 +124,7 @@ else
                     @GetChampionName(currentMatchup.EnemyChampion?.Id ?? selectedEnemyChampionId)
                     <span class="badge bg-secondary ms-2">@GetRoleName(currentMatchup.Role?.Id ?? selectedRoleId)</span>
                 </h5>
-                <span class="badge @GetDifficultyBadgeClass(editModel.Difficulty)">@editModel.Difficulty</span>
+                <span class="badge @GetDifficultyBadgeClass(editModel.Difficulty)">@GetDifficultyDisplayName(editModel.Difficulty)</span>
             </div>
             <div class="card-body">
                 <!-- Dificultad -->
@@ -136,7 +136,7 @@ else
                             <input type="radio" class="btn-check" name="difficulty" id="diff-@diff"
                                    value="@diff" checked="@(editModel.Difficulty == diff)"
                                    @onchange="@(() => editModel.Difficulty = diff)">
-                            <label class="btn @GetDifficultyButtonClass(diff)" for="diff-@diff">@diff</label>
+                            <label class="btn @GetDifficultyButtonClass(diff)" for="diff-@diff">@GetDifficultyDisplayName(diff)</label>
                         }
                     </div>
                 </div>
@@ -798,5 +798,14 @@ else
         "Hard" => "btn-outline-danger",
         "Extreme" => "btn-outline-dark",
         _ => "btn-outline-secondary"
+    };
+
+    private string GetDifficultyDisplayName(string difficulty) => difficulty switch
+    {
+        "Easy" => "Fácil",
+        "Medium" => "Medio",
+        "Hard" => "Difícil",
+        "Extreme" => "Extremo",
+        _ => difficulty
     };
 }

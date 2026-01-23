@@ -44,13 +44,13 @@
                                 <InputSelect id="category" class="form-select"
                                              @bind-Value="createTipDto.Category">
                                     <option value="">-- Selecciona una categoría --</option>
-                                    <option value="EarlyGame">Early Game - Fase inicial</option>
-                                    <option value="MidGame">Mid Game - Fase media</option>
-                                    <option value="LateGame">Late Game - Fase tardía</option>
-                                    <option value="Items">Items - Objetos recomendados</option>
-                                    <option value="Runes">Runes - Runas recomendadas</option>
-                                    <option value="Abilities">Abilities - Uso de habilidades</option>
-                                    <option value="General">General - Consejos generales</option>
+                                    <option value="EarlyGame">Fase Inicial</option>
+                                    <option value="MidGame">Fase Media</option>
+                                    <option value="LateGame">Fase Tardía</option>
+                                    <option value="Items">Objetos</option>
+                                    <option value="Runes">Runas</option>
+                                    <option value="Abilities">Habilidades</option>
+                                    <option value="General">General</option>
                                 </InputSelect>
                                 <ValidationMessage For="@(() => createTipDto.Category)" />
                             </div>

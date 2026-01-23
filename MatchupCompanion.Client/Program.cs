@@ -41,5 +41,6 @@ builder.Services.AddScoped<IMatchupService, MatchupService>();
 builder.Services.AddScoped<IRuneService, RuneService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<ISummonerSpellService, SummonerSpellService>();
+builder.Services.AddScoped<IFavoriteChampionsService, FavoriteChampionsService>();
 
 await builder.Build().RunAsync();

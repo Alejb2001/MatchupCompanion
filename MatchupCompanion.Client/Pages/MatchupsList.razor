@@ -2,13 +2,27 @@
 @using MatchupCompanion.Shared.Models
 @using MatchupCompanion.Client.Services
 @inject IMatchupService MatchupService
+@inject IChampionService ChampionService
 @inject NavigationManager Navigation
 
 <PageTitle>Todos los Matchups</PageTitle>
 
 <div class="container mt-4">
-    <h1>Todos los Matchups</h1>
-    <p class="lead">Explora todos los matchups disponibles</p>
+    @if (filterByChampion != null)
+    {
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">Matchups de @filterByChampion.Name</h5>
+                <small>Mostrando todos los matchups donde juegas como @filterByChampion.Name</small>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="ClearChampionFilter">
+                Ver Todos
+            </button>
+        </div>
+    }
+
+    <h1>@(filterByChampion != null ? $"Matchups de {filterByChampion.Name}" : "Todos los Matchups")</h1>
+    <p class="lead">Explora @(filterByChampion != null ? "los matchups de tu campeón favorito" : "todos los matchups disponibles")</p>
 
     @if (isLoading)
     {
@@ -72,11 +86,11 @@
                             </td>
                             <td>
                                 <span class="badge @GetDifficultyBadgeClass(matchup.Difficulty)">
-                                    @matchup.Difficulty
+                                    @GetDifficultyDisplayName(matchup.Difficulty)
                                 </span>
                             </td>
                             <td>
-                                <span class="badge bg-info">@matchup.Tips.Count tips</span>
+                                <span class="badge bg-info">@matchup.Tips.Count consejos</span>
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-primary" @onclick="() => ViewMatchup(matchup.Id)">
@@ -96,9 +110,34 @@
     private List<MatchupDto> filteredMatchups = new();
     private bool isLoading = true;
     private string? errorMessage;
+    private ChampionDto? filterByChampion = null;
+    private int? championIdFilter = null;
 
     protected override async Task OnInitializedAsync()
     {
+        // Extraer parámetro championId de la URL
+        var uri = new Uri(Navigation.Uri);
+        var query = uri.Query;
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            // Parsear query string manualmente
+            var queryParams = query.TrimStart('?').Split('&');
+            foreach (var param in queryParams)
+            {
+                var keyValue = param.Split('=');
+                if (keyValue.Length == 2 && keyValue[0] == "championId")
+                {
+                    if (int.TryParse(keyValue[1], out var championId))
+                    {
+                        championIdFilter = championId;
+                        filterByChampion = await ChampionService.GetChampionByIdAsync(championId);
+                        break;
+                    }
+                }
+            }
+        }
+
         await LoadMatchups();
     }
 
@@ -110,7 +149,18 @@
         try
         {
             matchups = await MatchupService.GetAllMatchupsAsync();
-            filteredMatchups = matchups;
+
+            // Aplicar filtro por campeón si está presente
+            if (championIdFilter.HasValue)
+            {
+                filteredMatchups = matchups
+                    .Where(m => m.PlayerChampion.Id == championIdFilter.Value)
+                    .ToList();
+            }
+            else
+            {
+                filteredMatchups = matchups;
+            }
         }
         catch (Exception ex)
         {
@@ -124,19 +174,28 @@
 
     private void FilterMatchups()
     {
+        var baseMatchups = championIdFilter.HasValue
+            ? matchups.Where(m => m.PlayerChampion.Id == championIdFilter.Value).ToList()
+            : matchups;
+
         if (string.IsNullOrWhiteSpace(filterText))
         {
-            filteredMatchups = matchups;
+            filteredMatchups = baseMatchups;
         }
         else
         {
             var filter = filterText.ToLower();
-            filteredMatchups = matchups.Where(m =>
+            filteredMatchups = baseMatchups.Where(m =>
                 m.PlayerChampion.Name.ToLower().Contains(filter) ||
                 m.EnemyChampion.Name.ToLower().Contains(filter) ||
                 m.Role.Name.ToLower().Contains(filter)
             ).ToList();
         }
+    }
+
+    private void ClearChampionFilter()
+    {
+        Navigation.NavigateTo("/matchups");
     }
 
     private string filterText
@@ -161,6 +220,15 @@
             _ => "bg-secondary"
         };
     }
+
+    private string GetDifficultyDisplayName(string difficulty) => difficulty switch
+    {
+        "Easy" => "Fácil",
+        "Medium" => "Medio",
+        "Hard" => "Difícil",
+        "Extreme" => "Extremo",
+        _ => difficulty
+    };
 
     private void ViewMatchup(int id)
     {

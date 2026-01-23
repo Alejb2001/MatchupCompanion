@@ -1,4 +1,9 @@
 ﻿@page "/"
+@using MatchupCompanion.Shared.Models
+@using MatchupCompanion.Client.Services
+@inject IChampionService ChampionService
+@inject IFavoriteChampionsService FavoriteChampionsService
+@inject NavigationManager Navigation
 
 <PageTitle>Home - Matchup Companion</PageTitle>
 
@@ -56,6 +61,120 @@
         </div>
     </div>
 
+    <!-- Sección de Campeones Favoritos -->
+    @if (favoriteChampions.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Mis Campeones Favoritos</h5>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="ToggleManageFavorites">
+                                @(showManageFavorites ? "Ocultar Gestión" : "Gestionar Favoritos")
+                            </button>
+                        </div>
+                        <p class="text-muted">Haz clic en un campeón para ver sus matchups</p>
+
+                        <div class="row">
+                            @foreach (var champion in favoriteChampions)
+                            {
+                                <div class="col-6 col-md-4 col-lg-2 mb-3">
+                                    <div class="card h-100 champion-card" style="cursor: pointer;" @onclick="() => NavigateToChampionMatchups(champion.Id)">
+                                        <div class="position-relative">
+                                            @if (!string.IsNullOrEmpty(champion.ImageUrl))
+                                            {
+                                                <img src="@champion.ImageUrl" class="card-img-top" alt="@champion.Name" />
+                                            }
+                                            else
+                                            {
+                                                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 120px;">
+                                                    <span>@champion.Name.Substring(0, 1)</span>
+                                                </div>
+                                            }
+                                            <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => RemoveFromFavorites(champion.Id)">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                        <div class="card-body p-2 text-center">
+                                            <small class="fw-bold">@champion.Name</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Sección para Gestionar Favoritos -->
+    @if (showManageFavorites || !favoriteChampions.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Agregar Campeones Favoritos</h5>
+                        <p class="text-muted">Selecciona tus campeones favoritos para acceso rápido</p>
+
+                        @if (isLoadingAllChampions)
+                        {
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="Buscar campeón..."
+                                       @bind="championSearchText" @bind:event="oninput" />
+                            </div>
+
+                            <div class="row" style="max-height: 400px; overflow-y: auto;">
+                                @foreach (var champion in filteredAvailableChampions)
+                                {
+                                    <div class="col-6 col-md-3 col-lg-2 mb-3">
+                                        <div class="card h-100 champion-card @(IsFavorite(champion.Id) ? "border-primary" : "")"
+                                             style="cursor: pointer;"
+                                             @onclick="() => ToggleFavorite(champion.Id)">
+                                            <div class="position-relative">
+                                                @if (!string.IsNullOrEmpty(champion.ImageUrl))
+                                                {
+                                                    <img src="@champion.ImageUrl" class="card-img-top" alt="@champion.Name" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 80px;">
+                                                        <span>@champion.Name.Substring(0, 1)</span>
+                                                    </div>
+                                                }
+                                                @if (IsFavorite(champion.Id))
+                                                {
+                                                    <span class="position-absolute top-0 end-0 m-1">
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    </span>
+                                                }
+                                            </div>
+                                            <div class="card-body p-2 text-center">
+                                                <small class="fw-bold">@champion.Name</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="row mt-4">
         <div class="col-lg-12">
             <div class="card">
@@ -74,3 +193,86 @@
         </div>
     </div>
 </div>
+
+<style>
+    .champion-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .champion-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+</style>
+
+@code {
+    private List<ChampionDto> allChampions = new();
+    private List<ChampionDto> favoriteChampions = new();
+    private List<int> favoriteChampionIds = new();
+    private bool isLoadingAllChampions = true;
+    private bool showManageFavorites = false;
+    private string championSearchText = string.Empty;
+
+    private IEnumerable<ChampionDto> filteredAvailableChampions =>
+        string.IsNullOrWhiteSpace(championSearchText)
+            ? allChampions
+            : allChampions.Where(c => c.Name.Contains(championSearchText, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFavorites();
+        await LoadAllChampions();
+    }
+
+    private async Task LoadFavorites()
+    {
+        favoriteChampionIds = await FavoriteChampionsService.GetFavoriteChampionIdsAsync();
+
+        if (favoriteChampionIds.Any())
+        {
+            favoriteChampions = new List<ChampionDto>();
+            foreach (var id in favoriteChampionIds)
+            {
+                var champion = await ChampionService.GetChampionByIdAsync(id);
+                if (champion != null)
+                {
+                    favoriteChampions.Add(champion);
+                }
+            }
+        }
+    }
+
+    private async Task LoadAllChampions()
+    {
+        isLoadingAllChampions = true;
+        allChampions = await ChampionService.GetAllChampionsAsync();
+        isLoadingAllChampions = false;
+    }
+
+    private bool IsFavorite(int championId)
+    {
+        return favoriteChampionIds.Contains(championId);
+    }
+
+    private async Task ToggleFavorite(int championId)
+    {
+        await FavoriteChampionsService.ToggleFavoriteAsync(championId);
+        await LoadFavorites();
+    }
+
+    private async Task RemoveFromFavorites(int championId)
+    {
+        await FavoriteChampionsService.RemoveFavoriteAsync(championId);
+        await LoadFavorites();
+    }
+
+    private void ToggleManageFavorites()
+    {
+        showManageFavorites = !showManageFavorites;
+    }
+
+    private void NavigateToChampionMatchups(int championId)
+    {
+        Navigation.NavigateTo($"/matchups?championId={championId}");
+    }
+}

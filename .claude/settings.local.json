@@ -12,7 +12,8 @@
       "Bash(dotnet tool install:*)",
       "Bash(dotnet build:*)",
       "Bash(dotnet ef database update:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(find \"c:\\\\Users\\\\alejb\\\\MatchupCompanion\\\\MatchupCompanionBackend\\\\MatchupCompanion\\\\MatchupCompanion.Client\\\\Pages\"\" -type f -name \"*.razor\" -o -name \"*.cs \")"
     ]
   }
 }

@@ -129,7 +129,7 @@
                             <div class="col-md-4">
                                 <strong>Dificultad:</strong>
                                 <span class="badge @GetDifficultyBadgeClass(matchup.Difficulty) ms-2">
-                                    @matchup.Difficulty
+                                    @GetDifficultyDisplayName(matchup.Difficulty)
                                 </span>
                             </div>
                             <div class="col-md-4">
@@ -403,7 +403,7 @@
                                                     aria-expanded="true"
                                                     aria-controls="@($"collapse-{categoryId}")">
                                                 <strong>@category.Key</strong>
-                                                <span class="badge bg-primary ms-2">@category.Value.Count tips</span>
+                                                <span class="badge bg-primary ms-2">@category.Value.Count consejos</span>
                                             </button>
                                         </h2>
                                         <div id="@($"collapse-{categoryId}")"
@@ -717,10 +717,10 @@
     {
         return category switch
         {
-            "EarlyGame" => "Early Game",
-            "MidGame" => "Mid Game",
-            "LateGame" => "Late Game",
-            "Items" => "Items",
+            "EarlyGame" => "Fase Inicial",
+            "MidGame" => "Fase Media",
+            "LateGame" => "Fase Tardía",
+            "Items" => "Objetos",
             "Runes" => "Runas",
             "Abilities" => "Habilidades",
             "General" => "General",
@@ -739,6 +739,15 @@
             _ => "bg-secondary"
         };
     }
+
+    private string GetDifficultyDisplayName(string difficulty) => difficulty switch
+    {
+        "Easy" => "Fácil",
+        "Medium" => "Medio",
+        "Hard" => "Difícil",
+        "Extreme" => "Extremo",
+        _ => difficulty
+    };
 
     private void GoBack()
     {

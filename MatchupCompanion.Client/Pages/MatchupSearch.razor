@@ -100,7 +100,7 @@
                                 <p class="mb-2">
                                     <span class="badge bg-secondary">@matchup.Role.Name</span>
                                     <span class="badge @GetDifficultyBadgeClass(matchup.Difficulty) ms-2">
-                                        @matchup.Difficulty
+                                        @GetDifficultyDisplayName(matchup.Difficulty)
                                     </span>
                                 </p>
                                 <button class="btn btn-success" @onclick="() => ViewMatchupDetails()">
@@ -202,6 +202,15 @@
             _ => "bg-secondary"
         };
     }
+
+    private string GetDifficultyDisplayName(string difficulty) => difficulty switch
+    {
+        "Easy" => "Fácil",
+        "Medium" => "Medio",
+        "Hard" => "Difícil",
+        "Extreme" => "Extremo",
+        _ => difficulty
+    };
 
     private void ViewMatchupDetails()
     {
