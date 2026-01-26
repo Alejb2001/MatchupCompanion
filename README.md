@@ -74,7 +74,7 @@ El cliente estará disponible en `http://localhost:5173`
 4. **Primera Ejecución**
    - La base de datos se crea automáticamente
    - Los datos del juego se sincronizan desde la API de Riot
-   - Usuario administrador por defecto: `admin@matchup.com` / `Admin123`
+   
 
 ## Estructura del Proyecto
 
